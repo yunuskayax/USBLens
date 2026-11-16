@@ -143,7 +143,17 @@ RUSTFLAGS="--cfg usblens_check" cargo check   # win.rs'i Linux/macOS'ta derler (
 Uygulama yeni sürümü doğrudan **GitHub Releases** üzerinden kontrol eder: en son yayınlanmış
 Release'in etiketindeki sürüm numarasını (`v0.2.3` gibi) yüklü sürümle karşılaştırır, yeni sürüm
 varsa Release notlarını ve `UsbLens-setup.exe` indirme bağlantısını gösterir.
-Yeni sürüm çıkarmak için `vX.Y.Z` etiketli bir Release yayınlamak yeterli; kurulum dosyaları otomatik eklenir.
+### Yeni sürüm yayınlama
+
+1. [`src/changelog.json`](src/changelog.json) dosyasına yeni sürümün maddelerini ekle
+   (`new` / `improved` / `fixed`, Türkçe ve İngilizce). Sürüm numarasını `package.json`,
+   `src-tauri/Cargo.toml` ve `src-tauri/tauri.conf.json` içinde güncelle.
+   `node scripts/changelog.mjs md` ile `CHANGELOG.md` yenilenir.
+2. GitHub'da `vX.Y.Z` etiketli bir Release yayınla (açıklamayı boş bırakabilirsin).
+3. Birkaç dakika içinde kurulum dosyası eklenir ve Release açıklaması changelog'dan doldurulur.
+
+Kullanıcılar sürüm notlarını uygulamada **Ayarlar → Güncellemeler** bölümünde görür; güncellemeden sonraki
+ilk açılışta **Yenilikler** penceresi gösterilir. Yeni sürüm varken o sürümün notları GitHub'dan okunur.
 
 GitHub'a ulaşılamazsa yedek olarak `https://usblens.com/latest.json` ([`site/latest.json`](site/latest.json)) okunur.
 

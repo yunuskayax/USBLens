@@ -4,7 +4,7 @@ import { dict } from "../i18n";
 import { WEBSITE, appVersion, openUrl } from "../api";
 import { IconExternal, IconX } from "./Icons";
 
-export function AboutDialog({ lang, close }: { lang: Lang; close: () => void }) {
+export function AboutDialog({ lang, close, showNotes }: { lang: Lang; close: () => void; showNotes: () => void }) {
   const t = dict[lang];
   const [version, setVersion] = useState("…");
 
@@ -33,7 +33,15 @@ export function AboutDialog({ lang, close }: { lang: Lang; close: () => void }) 
         <p className="about-body">{t.aboutBody}</p>
 
         <dl className="about-list">
-          <div><dt>{t.version}</dt><dd>{version}</dd></div>
+          <div>
+            <dt>{t.version}</dt>
+            <dd>
+              {version}{" "}
+              <button className="link" onClick={showNotes}>
+                · {t.releaseNotes}
+              </button>
+            </dd>
+          </div>
           <div><dt>{t.developer}</dt><dd>Yunus Kaya</dd></div>
           <div>
             <dt>{t.website}</dt>

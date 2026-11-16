@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as api from "./api";
 import { dict, errorText, kindLabels } from "./i18n";
 import { vidPid } from "./format";
-import type { DeviceKind, ExportFormat, Settings, SortKey, StatusFilter, SystemInfo, UpdateInfo, UsbDevice } from "./types";
+import type { ChangeEntry, DeviceKind, ExportFormat, Settings, SortKey, StatusFilter, SystemInfo, UpdateInfo, UsbDevice } from "./types";
 import { Sidebar } from "./components/Sidebar";
 import { DeviceTable } from "./components/DeviceTable";
 import { DetailPanel } from "./components/DetailPanel";
@@ -10,6 +10,7 @@ import { Timeline } from "./components/Timeline";
 import { ConfirmDialog, Toasts, type ConfirmState, type Toast } from "./components/Overlays";
 import { AboutDialog } from "./components/About";
 import { SettingsDialog } from "./components/SettingsDialog";
+import { CHANGELOG, WhatsNewDialog, versionGt } from "./components/Changelog";
 import { playUsbSound } from "./sound";
 import { IconClock, IconDownload, IconGlobe, IconInfo, IconMoon, IconRefresh, IconSearch, IconSettings, IconShield, IconSun, IconTable } from "./components/Icons";
 
@@ -84,6 +85,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [whatsNew, setWhatsNew] = useState<{ entries: ChangeEntry[]; current: string } | null>(null);
+  const closeWhatsNew = useCallback(() => setWhatsNew(null), []);
   const closeAbout = useCallback(() => setAboutOpen(false), []);
   const searchRef = useRef<HTMLInputElement>(null);
   const langRef = useRef(lang);
@@ -122,8 +125,22 @@ export default function App() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     api
       .getSettings()
-      .then((s) => {
+      .then(async (s) => {
         setSettings(s);
+        // "What's new" after an update: show the entries between the last seen and the running version.
+        try {
+          const current = await api.appVersion();
+          if (s.lastSeenVersion && s.lastSeenVersion !== current) {
+            const entries =
+              s.lastSeenVersion === "legacy"
+                ? CHANGELOG.filter((e) => e.version === current)
+                : CHANGELOG.filter((e) => versionGt(e.version, s.lastSeenVersion) && !versionGt(e.version, current));
+            if (entries.length) setWhatsNew({ entries, current });
+          }
+          if (s.lastSeenVersion !== current) updateSettings({ lastSeenVersion: current });
+        } catch {
+          /* ignore */
+        }
         if (!s.checkUpdatesOnStart) return;
         timer = setTimeout(async () => {
           try {
@@ -149,7 +166,7 @@ export default function App() {
       clearTimeout(timer);
       unlisten.then((fn) => fn());
     };
-  }, [toast]);
+  }, [toast, updateSettings]);
 
   // Live USB events from the Rust side.
   useEffect(() => {
@@ -197,14 +214,14 @@ export default function App() {
       } else if (e.key === "F5") {
         e.preventDefault();
         refresh();
-      } else if (e.key === "Escape" && !confirm && !aboutOpen && !settingsOpen) {
+      } else if (e.key === "Escape" && !confirm && !aboutOpen && !settingsOpen && !whatsNew) {
         setSelected(null);
         setExportOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [refresh, confirm, aboutOpen, settingsOpen, updateSettings]);
+  }, [refresh, confirm, aboutOpen, settingsOpen, whatsNew, updateSettings]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLocaleLowerCase(lang);
@@ -419,7 +436,17 @@ export default function App() {
       {settingsOpen && (
         <SettingsDialog settings={settings} update={updateSettings} close={closeSettings} updateInfo={updateInfo} setUpdateInfo={setUpdateInfo} />
       )}
-      {aboutOpen && <AboutDialog lang={lang} close={closeAbout} />}
+      {aboutOpen && (
+        <AboutDialog
+          lang={lang}
+          close={closeAbout}
+          showNotes={() => {
+            setAboutOpen(false);
+            api.appVersion().then((v) => setWhatsNew({ entries: CHANGELOG, current: v })).catch(() => {});
+          }}
+        />
+      )}
+      {whatsNew && <WhatsNewDialog lang={lang} entries={whatsNew.entries} current={whatsNew.current} close={closeWhatsNew} />}
       {confirm && <ConfirmDialog lang={lang} state={confirm} close={() => setConfirm(null)} />}
     </div>
   );

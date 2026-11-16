@@ -124,6 +124,7 @@ export const defaultSettings: Settings = {
   bringToFrontOnStorage: false,
   openExplorerOnStorage: false,
   checkUpdatesOnStart: true,
+  lastSeenVersion: "",
 };
 
 // Browser preview keeps settings in localStorage; the app keeps them in Rust.

@@ -69,8 +69,8 @@ fn short_notes(body: Option<String>) -> Option<String> {
     if body.is_empty() {
         return None;
     }
-    let mut out: String = body.chars().take(600).collect();
-    if body.chars().count() > 600 {
+    let mut out: String = body.chars().take(4000).collect();
+    if body.chars().count() > 4000 {
         out.push('…');
     }
     Some(out)

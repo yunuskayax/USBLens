@@ -48,6 +48,9 @@ jobs:
         with:
           workspaces: src-tauri
       - run: npm ci
+      - name: Changelog has an entry for this version
+        shell: pwsh
+        run: node scripts/changelog.mjs check (node -p "require('./package.json').version")
       - run: cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: Pick signing mode
@@ -192,14 +195,27 @@ jobs:
           name: usblens-windows-${{ steps.mode.outputs.mode == 'none' && 'unsigned' || 'signed' }}
           path: out/
 
+      - name: Release notes from src/changelog.json
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag || github.ref_name }}
+          MODE: ${{ steps.mode.outputs.mode }}
+        run: |
+          $notes = (node scripts/changelog.mjs notes "$env:TAG") -join "`n"
+          if ($env:MODE -eq "signpath") {
+            $notes += "`n`nFree code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org)."
+          }
+          Set-Content -Path release-notes.md -Value $notes -Encoding utf8
+          Get-Content release-notes.md
+
       - name: Draft GitHub release (tag push)
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           draft: true
           name: UsbLens ${{ github.ref_name }}
-          generate_release_notes: true
-          body: ${{ steps.mode.outputs.mode == 'signpath' && 'Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).' || '' }}
+          body_path: release-notes.md
           files: |
             out/nsis/*.exe
             out/stable/*
@@ -215,10 +231,9 @@ jobs:
           $files = Get-ChildItem out -Recurse -Include *.exe | ForEach-Object { $_.FullName }
           gh release upload "$env:TAG" @files --clobber --repo "${{ github.repository }}"
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          if ($env:MODE -eq "signpath") {
-            $note = "Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org)."
-            $body = gh release view "$env:TAG" --repo "${{ github.repository }}" --json body --jq .body
-            if ($body -notlike "*SignPath*") {
-              gh release edit "$env:TAG" --repo "${{ github.repository }}" --notes "$body`n`n$note"
-            }
+          # Fill the release text from the changelog when the user left it (nearly) empty.
+          $body = gh release view "$env:TAG" --repo "${{ github.repository }}" --json body --jq .body
+          $generated = Get-Content release-notes.md -Raw
+          if ($generated.Trim() -and ($null -eq $body -or $body.Trim().Length -lt 40)) {
+            gh release edit "$env:TAG" --repo "${{ github.repository }}" --notes-file release-notes.md
           }

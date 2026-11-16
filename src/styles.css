@@ -293,3 +293,26 @@ button.admin:hover { text-decoration: underline; }
 .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); display: inline-block; }
 .badge-wrap .badge-dot { position: absolute; top: 4px; right: 4px; }
 .toast-action { margin-top: 8px; padding: 4px 10px; }
+
+/* ---------- release notes ---------- */
+.settings-sub { font-size: 14px; margin: 26px 0 4px; }
+.chg { display: flex; flex-direction: column; }
+.chg-entry { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.chg-entry:last-child { border-bottom: 0; }
+.chg-entry header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.chg-entry header b { font-size: 14px; }
+.chg-installed { font-size: 11px; padding: 1px 8px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.chg ul, ul.chg { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.chg li { display: flex; gap: 10px; align-items: baseline; line-height: 1.45; }
+.chg li.chg-h { font-weight: 600; margin-top: 6px; }
+.chg-tag { flex-shrink: 0; min-width: 78px; text-align: center; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 6px; }
+.chg-tag.new { color: var(--on); background: rgba(34, 197, 94, 0.12); }
+.chg-tag.improved { color: var(--accent); background: var(--accent-soft); }
+.chg-tag.fixed { color: var(--warn); background: rgba(245, 158, 11, 0.12); }
+.update-remote { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
+.modal.whatsnew { position: relative; width: min(560px, 92vw); max-height: 86vh; display: flex; flex-direction: column; padding: 24px; }
+.whatsnew-hero { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; padding-right: 30px; }
+.whatsnew-hero img { border-radius: 12px; }
+.whatsnew-hero h2 { margin: 0; font-size: 18px; }
+.whatsnew-hero p { margin: 2px 0 0 !important; white-space: normal !important; }
+.whatsnew-body { overflow-y: auto; margin: 6px -6px 16px; padding: 0 6px; }

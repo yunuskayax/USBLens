@@ -71,6 +71,7 @@ export interface Settings {
   bringToFrontOnStorage: boolean;
   openExplorerOnStorage: boolean;
   checkUpdatesOnStart: boolean;
+  lastSeenVersion: string;
 }
 
 export interface UpdateInfo {
@@ -81,3 +82,7 @@ export interface UpdateInfo {
   notes: string | null;
   date: string | null;
 }
+
+export type ChangeType = "new" | "improved" | "fixed";
+export interface ChangeItem { type: ChangeType; tr: string; en: string }
+export interface ChangeEntry { version: string; date: string; items: ChangeItem[] }

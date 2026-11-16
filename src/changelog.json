@@ -1,0 +1,56 @@
+[
+  {
+    "version": "0.2.4",
+    "date": "2026-11-16",
+    "items": [
+      { "type": "new", "tr": "Sürüm notları: Ayarlar → Güncellemeler bölümünde tüm değişiklikler listelenir", "en": "Release notes: every change is listed in Settings → Updates" },
+      { "type": "new", "tr": "Güncellemeden sonraki ilk açılışta \"Yenilikler\" penceresi gösterilir", "en": "A \"What's new\" window appears on the first launch after an update" },
+      { "type": "improved", "tr": "Tüm bağlantılar ve kurulum sihirbazı usblens.com adresine taşındı", "en": "All links and the setup wizard now point to usblens.com" },
+      { "type": "improved", "tr": "Kurulum tek dosya: yalnızca setup.exe (MSI kaldırıldı, çift kurulum sorunu önlendi)", "en": "Single installer: setup.exe only (MSI removed to prevent duplicate installs)" }
+    ]
+  },
+  {
+    "version": "0.2.3",
+    "date": "2026-11-16",
+    "items": [
+      { "type": "improved", "tr": "Güncelleme denetimi doğrudan GitHub Releases üzerinden yapılır", "en": "Update check now reads GitHub Releases directly" },
+      { "type": "new", "tr": "usblens.com: İndir düğmesi en son sürümü doğrudan indirir", "en": "usblens.com: the Download button downloads the latest version directly" },
+      { "type": "fixed", "tr": "\"Güncelleme sunucusuna ulaşılamadı\" hatası giderildi", "en": "Fixed the \"Could not reach the update server\" error" }
+    ]
+  },
+  {
+    "version": "0.2.2",
+    "date": "2026-11-16",
+    "items": [
+      { "type": "new", "tr": "Kenar çubuğu simge moduna daraltılabilir (Ctrl+B)", "en": "The side panel can collapse to an icon rail (Ctrl+B)" },
+      { "type": "new", "tr": "Modern, Türkçe kurulum sihirbazı; kurulum yönetici izni istemez", "en": "Modern setup wizard in Turkish and English; no admin rights needed to install" },
+      { "type": "new", "tr": "Kod imzalama altyapısı (SignPath Foundation / kendi sertifikan)", "en": "Code signing support (SignPath Foundation / own certificate)" }
+    ]
+  },
+  {
+    "version": "0.2.1",
+    "date": "2026-11-16",
+    "items": [
+      { "type": "fixed", "tr": "Alt çubuğun yukarı kayıp altta boşluk kalması düzeltildi", "en": "Fixed the status bar floating up and leaving a gap at the bottom" }
+    ]
+  },
+  {
+    "version": "0.2.0",
+    "date": "2026-11-16",
+    "items": [
+      { "type": "new", "tr": "Ayarlar: her zaman üstte, tepsiye küçült, Windows ile başlat, küçültülmüş başlat", "en": "Settings: always on top, minimize to tray, start with Windows, start minimized" },
+      { "type": "new", "tr": "Takılma / çıkarılma için sesli uyarı (kısa ton veya cihaz adını sesli okuma)", "en": "Sound alerts on plug / unplug (chime or the device name read aloud)" },
+      { "type": "new", "tr": "Depolama aygıtı takılınca uygulamayı öne getir / sürücüyü Gezgin'de aç", "en": "Bring the app to front / open the drive in Explorer when storage is plugged in" },
+      { "type": "new", "tr": "Sistem tepsisi simgesi, güncelleme denetimi ve Hakkında sayfası", "en": "Tray icon, update check and About page" }
+    ]
+  },
+  {
+    "version": "0.1.0",
+    "date": "2026-11-16",
+    "items": [
+      { "type": "new", "tr": "İlk sürüm: bağlı ve geçmişte bağlanmış USB cihazları, arama, filtreler, zaman çizelgesi", "en": "First release: current and past USB devices, search, filters, timeline" },
+      { "type": "new", "tr": "Etkinleştir / devre dışı bırak, güvenli çıkar, kaldır", "en": "Enable / disable, safely remove, uninstall" },
+      { "type": "new", "tr": "Canlı takılma bildirimi; HTML, CSV ve JSON rapor (SHA-256)", "en": "Live plug-in alerts; HTML, CSV and JSON reports (SHA-256)" }
+    ]
+  }
+]

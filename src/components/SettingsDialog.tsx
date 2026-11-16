@@ -3,6 +3,7 @@ import type { Settings, UpdateInfo } from "../types";
 import { dict, errorText } from "../i18n";
 import * as api from "../api";
 import { playUsbSound } from "../sound";
+import { CHANGELOG, ChangelogList, RemoteNotes } from "./Changelog";
 import { IconBell, IconDownload, IconGlobe, IconRefresh, IconWindow, IconX, KindIcon } from "./Icons";
 
 type Section = "general" | "window" | "notifications" | "storage" | "updates";
@@ -186,7 +187,14 @@ export function SettingsDialog({ settings: s, update, close, updateInfo, setUpda
                     {updateInfo.date && <span className="setting-desc"> · {updateInfo.date}</span>}
                   </div>
                 )}
-                {updateInfo?.available && updateInfo.notes && <p className="update-notes">{updateInfo.notes}</p>}
+                {updateInfo?.available && updateInfo.notes && (
+                  <div className="update-remote">
+                    <div className="setting-label">
+                      {t.inNewVersion} · v{updateInfo.latest}
+                    </div>
+                    <RemoteNotes lang={s.lang} text={updateInfo.notes} />
+                  </div>
+                )}
                 {updateError && <div className="update-status err">{updateError}</div>}
                 <div className="update-actions">
                   <button className="btn" onClick={checkNow} disabled={checking}>
@@ -199,6 +207,8 @@ export function SettingsDialog({ settings: s, update, close, updateInfo, setUpda
                   )}
                 </div>
               </div>
+              <h3 className="settings-sub">{t.releaseNotes}</h3>
+              <ChangelogList lang={s.lang} entries={CHANGELOG} current={updateInfo?.current ?? version} />
             </div>
           )}
         </section>

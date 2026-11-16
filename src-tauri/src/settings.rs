@@ -32,6 +32,8 @@ pub struct Settings {
     pub open_explorer_on_storage: bool,
     // Updates
     pub check_updates_on_start: bool,
+    /// Version whose release notes the user has seen (drives the "What's new" dialog).
+    pub last_seen_version: String,
 }
 
 impl Default for Settings {
@@ -54,6 +56,7 @@ impl Default for Settings {
             bring_to_front_on_storage: false,
             open_explorer_on_storage: false,
             check_updates_on_start: true,
+            last_seen_version: String::new(),
         }
     }
 }
@@ -82,11 +85,17 @@ pub struct SettingsStore {
 
 impl SettingsStore {
     pub fn load(path: PathBuf) -> Self {
-        let current = std::fs::read_to_string(&path)
-            .ok()
-            .and_then(|s| serde_json::from_str::<Settings>(&s).ok())
+        let existing = std::fs::read_to_string(&path).ok();
+        let mut current = existing
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<Settings>(s).ok())
             .unwrap_or_default()
             .sanitized();
+        // Settings saved by a version older than 0.2.4 have no last_seen_version:
+        // that is an update (not a fresh install), so the UI should show what's new.
+        if existing.is_some() && current.last_seen_version.is_empty() {
+            current.last_seen_version = "legacy".into();
+        }
         Self {
             path,
             current: Mutex::new(current),
@@ -123,6 +132,16 @@ mod tests {
         assert!(s.always_on_top);
         assert!(s.close_to_tray);
         assert_eq!(s.sound_volume, 100);
+    }
+
+    #[test]
+    fn marks_settings_from_older_versions() {
+        let dir = std::env::temp_dir().join(format!("usblens-legacy-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("settings.json"), r#"{"lang":"tr"}"#).unwrap();
+        assert_eq!(SettingsStore::load(dir.join("settings.json")).get().last_seen_version, "legacy");
+        assert_eq!(SettingsStore::load(dir.join("missing.json")).get().last_seen_version, "");
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]

@@ -11,8 +11,7 @@ and have not been modified.
 ## What is signed
 
 - `usblens.exe` — the application binary (signed before it is packed into the installers)
-- `UsbLens_<version>_x64-setup.exe` — NSIS installer
-- `UsbLens_<version>_x64_tr-TR.msi` — MSI installer
+- `UsbLens_<version>_x64-setup.exe` / `UsbLens-setup.exe` — installer
 
 Only binaries built by the [GitHub Actions workflow](.github/workflows/build.yml) of this repository
 from a commit on `main` or a release tag are signed. Locally built binaries are never signed.

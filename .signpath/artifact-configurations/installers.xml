@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- SignPath artifact configuration "installers": the NSIS setup.exe and the MSI. -->
+<!-- SignPath artifact configuration "installers": the NSIS setup.exe. -->
 <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
   <zip-file>
     <directory path="nsis">
       <pe-file path="*.exe" max-matches="unbounded">
         <authenticode-sign />
       </pe-file>
-    </directory>
-    <directory path="msi">
-      <msi-file path="*.msi" max-matches="unbounded">
-        <authenticode-sign />
-      </msi-file>
     </directory>
   </zip-file>
 </artifact-configuration>

@@ -62,7 +62,7 @@ SignPath panelinden isteği **onayladığında** iş akışı devam eder.
    - `WINDOWS_CERTIFICATE` → panodaki base64 metni
    - `WINDOWS_CERTIFICATE_PASSWORD` → PFX şifresi
 
-İş akışı exe'yi ve kurulum dosyalarını `signtool` ile imzalar ve zaman damgası ekler.
+İş akışı exe'yi ve kurulum dosyasını `signtool` ile imzalar ve zaman damgası ekler.
 
 ---
 

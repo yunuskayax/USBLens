@@ -114,14 +114,13 @@ jobs:
 
       # ---------------------------------------------------------- 2) installers
       - name: Build installers
-        run: npx tauri bundle --bundles nsis,msi --no-binary-patching
+        run: npx tauri bundle --bundles nsis --no-binary-patching
 
       - name: Collect installers
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force out/nsis, out/msi | Out-Null
+          New-Item -ItemType Directory -Force out/nsis | Out-Null
           Copy-Item "$env:RELEASE_DIR/bundle/nsis/*.exe" out/nsis/
-          Copy-Item "$env:RELEASE_DIR/bundle/msi/*.msi" out/msi/
           Get-ChildItem -Recurse out | Format-Table FullName, Length
 
       - name: Sign installers (PFX)
@@ -130,7 +129,7 @@ jobs:
         env:
           CERT_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         run: |
-          $files = Get-ChildItem out -Recurse -Include *.exe, *.msi
+          $files = Get-ChildItem out -Recurse -Include *.exe
           foreach ($f in $files) {
             & $env:SIGNTOOL sign /f $env:CERT_PATH /p $env:CERT_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 /d UsbLens $f.FullName
             if ($LASTEXITCODE -ne 0) { exit 1 }
@@ -171,13 +170,12 @@ jobs:
           # releases/latest/download/UsbLens-setup.exe always points to the newest installer.
           New-Item -ItemType Directory -Force out/stable | Out-Null
           Copy-Item (Get-ChildItem out/nsis/*-setup.exe | Select-Object -First 1).FullName out/stable/UsbLens-setup.exe
-          Copy-Item (Get-ChildItem out/msi/*.msi | Select-Object -First 1).FullName out/stable/UsbLens.msi
 
       - name: Verify signatures
         if: steps.mode.outputs.mode != 'none'
         shell: pwsh
         run: |
-          foreach ($f in Get-ChildItem out -Recurse -Include *.exe, *.msi) {
+          foreach ($f in Get-ChildItem out -Recurse -Include *.exe) {
             $sig = Get-AuthenticodeSignature $f.FullName
             Write-Host "$($f.Name): $($sig.Status) — $($sig.SignerCertificate.Subject)"
             if ($sig.Status -ne "Valid") { throw "Signature check failed for $($f.Name)" }
@@ -204,7 +202,6 @@ jobs:
           body: ${{ steps.mode.outputs.mode == 'signpath' && 'Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).' || '' }}
           files: |
             out/nsis/*.exe
-            out/msi/*.msi
             out/stable/*
 
       - name: Attach installers to existing release
@@ -215,7 +212,7 @@ jobs:
           TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}
           MODE: ${{ steps.mode.outputs.mode }}
         run: |
-          $files = Get-ChildItem out -Recurse -Include *.exe, *.msi | ForEach-Object { $_.FullName }
+          $files = Get-ChildItem out -Recurse -Include *.exe | ForEach-Object { $_.FullName }
           gh release upload "$env:TAG" @files --clobber --repo "${{ github.repository }}"
           if ($LASTEXITCODE -ne 0) { exit 1 }
           if ($env:MODE -eq "signpath") {

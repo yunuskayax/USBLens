@@ -66,8 +66,7 @@ ve sürücü harfleriyle listeler. Canlı takılma bildirimi verir ve adli bili�
 
 [Releases](https://github.com/yunuskayax/USBLens/releases/latest) sayfasından indirin:
 
-- **`UsbLens_x.y.z_x64-setup.exe`** — kurulum dosyası (önerilen)
-- **`UsbLens_x.y.z_x64_tr-TR.msi`** — kurumsal dağıtım için MSI
+- **`UsbLens-setup.exe`** — kurulum dosyası (her zaman en son sürüm)
 
 <p align="center"><img src="docs/screenshots/installer.png" alt="Kurulum sihirbazı" width="500" /></p>
 
@@ -122,7 +121,7 @@ Windows tarafında veri şu kaynaklardan gelir:
 ```bash
 npm install
 npm run tauri dev       # geliştirme
-npm run tauri build     # kurulum dosyası: src-tauri/target/release/bundle/{nsis,msi}
+npm run tauri build     # kurulum dosyası: src-tauri/target/release/bundle/nsis
 ```
 
 Sadece arayüz üzerinde çalışmak için (Windows gerekmez, örnek veriyle açılır):

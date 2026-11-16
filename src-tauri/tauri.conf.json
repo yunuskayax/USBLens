@@ -29,8 +29,7 @@
   "bundle": {
     "active": true,
     "targets": [
-      "nsis",
-      "msi"
+      "nsis"
     ],
     "icon": [
       "icons/32x32.png",
@@ -58,13 +57,6 @@
         "displayLanguageSelector": false,
         "installMode": "currentUser",
         "compression": "lzma"
-      },
-      "wix": {
-        "language": [
-          "tr-TR"
-        ],
-        "bannerPath": "installer/wix-banner.bmp",
-        "dialogImagePath": "installer/wix-dialog.bmp"
       }
     }
   }

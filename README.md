@@ -149,7 +149,7 @@ Yeni sürüm çıkarmak için `vX.Y.Z` etiketli bir Release yayınlamak yeterli;
 GitHub'a ulaşılamazsa yedek olarak `https://usblens.com/latest.json` ([`site/latest.json`](site/latest.json)) okunur.
 
 Güvenlik için uygulama yalnızca `usblens.com`, `yunuskaya.com.tr` ve `github.com` bağlantılarını açar.
-Ayarlar `%APPDATA%\\com.yunus.usblens\\settings.json` dosyasında saklanır.
+Ayarlar `%APPDATA%\com.yunus.usblens\settings.json` dosyasında saklanır.
 
 ## Yönetici yetkisi
 

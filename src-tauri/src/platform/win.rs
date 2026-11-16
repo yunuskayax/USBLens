@@ -2,7 +2,7 @@
 //! notifications. Everything here works for both present and "phantom"
 //! (previously connected) devices unless noted.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ffi::c_void;
 use std::mem::{size_of, zeroed};
 use std::ptr::{null, null_mut};
@@ -368,6 +368,7 @@ unsafe fn build_device(
             .or_else(|| p.filetime(&DEVPKEY_Device_InstallDate)),
         last_arrival: p.filetime(&DEVPKEY_Device_LastArrivalDate),
         last_removal: p.filetime(&DEVPKEY_Device_LastRemovalDate),
+        security: Default::default(),
         instance_id,
         name,
         description,
@@ -414,6 +415,38 @@ pub fn list_devices() -> Result<Vec<UsbDevice>, String> {
         }
     }
     Ok(out)
+}
+
+/// Parent instance ids (upper-cased) of every HID keyboard Windows knows about, connected or not.
+/// The parent is the USB interface (`USB\VID_x&PID_y&MI_00\...`) or the USB device itself.
+pub fn keyboard_parent_ids() -> HashSet<String> {
+    let mut out = HashSet::new();
+    let e = wide("HID");
+    unsafe {
+        let Some(set) = DevInfoSet::new(SetupDiGetClassDevsW(null(), e.as_ptr(), null_mut(), DIGCF_ALLCLASSES)) else {
+            return out;
+        };
+        let mut index = 0;
+        loop {
+            let mut data = devinfo_data();
+            if SetupDiEnumDeviceInfo(set.0, index, &mut data) == 0 {
+                break;
+            }
+            index += 1;
+            let p = Props { set: set.0, data: &data };
+            let is_keyboard = p
+                .string(&DEVPKEY_Device_Class)
+                .map(|c| c.eq_ignore_ascii_case("Keyboard"))
+                .unwrap_or(false);
+            if !is_keyboard {
+                continue;
+            }
+            if let Some(parent) = p.string(&DEVPKEY_Device_Parent) {
+                out.insert(parent.to_ascii_uppercase());
+            }
+        }
+    }
+    out
 }
 
 unsafe fn open_single(instance_id: &str) -> Result<(DevInfoSet, SP_DEVINFO_DATA), String> {
@@ -582,6 +615,10 @@ where
                 action: if arrival { "arrival" } else { "removal" }.into(),
                 instance_id,
                 device,
+                alerts: Vec::new(),
+                level: Default::default(),
+                blocked: false,
+                block_error: None,
             });
         }
     });

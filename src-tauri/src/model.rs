@@ -46,6 +46,35 @@ pub struct UsbDevice {
     pub first_install: Option<String>,
     pub last_arrival: Option<String>,
     pub last_removal: Option<String>,
+    /// Filled by `security::annotate`.
+    #[serde(default)]
+    pub security: Security,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum RiskLevel {
+    #[default]
+    None,
+    Info,
+    Medium,
+    High,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Security {
+    /// Instance id of the physical device (composite parent) this entry belongs to.
+    pub root_id: String,
+    /// The physical device exposes a keyboard (HID keyboard interface).
+    pub keyboard: bool,
+    /// The physical device exposes mass storage.
+    pub storage: bool,
+    pub level: RiskLevel,
+    /// Machine-readable reasons, e.g. "KEYBOARD_AND_STORAGE", "PROGRAMMABLE_BOARD:Arduino".
+    pub reasons: Vec<String>,
+    /// None = allowlist off / device out of scope.
+    pub allowed: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -58,13 +87,22 @@ pub struct SystemInfo {
     pub os: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UsbEvent {
     /// "arrival" | "removal"
     pub action: String,
     pub instance_id: Option<String>,
     pub device: Option<UsbDevice>,
+    /// Security reasons raised for this event (see `security`).
+    #[serde(default)]
+    pub alerts: Vec<String>,
+    #[serde(default)]
+    pub level: RiskLevel,
+    /// The device was disabled by the allowlist policy.
+    #[serde(default)]
+    pub blocked: bool,
+    pub block_error: Option<String>,
 }
 
 /// Convert a Windows FILETIME (100 ns ticks since 1601-01-01 UTC) to RFC 3339.

@@ -2,6 +2,7 @@ import type { Lang, SortKey, UsbDevice } from "../types";
 import { dict, kindLabels } from "../i18n";
 import { formatDate, relative, vidPid } from "../format";
 import { KindIcon } from "./Icons";
+import { RiskBadge } from "./Security";
 
 interface Props {
   lang: Lang;
@@ -54,7 +55,7 @@ export function DeviceTable({ lang, devices, selected, onSelect, sort, setSort, 
           {devices.map((d) => (
             <tr
               key={d.instanceId}
-              className={`${selected === d.instanceId ? "selected" : ""} ${flash.has(d.instanceId) ? "flash" : ""} ${d.connected ? "" : "dim"}`}
+              className={`${selected === d.instanceId ? "selected" : ""} ${flash.has(d.instanceId) ? "flash" : ""} ${d.connected ? "" : "dim"} ${d.security.level === "high" ? "risk-high" : ""}`}
               onClick={() => onSelect(d.instanceId)}
             >
               <td className="col-dot">
@@ -66,7 +67,9 @@ export function DeviceTable({ lang, devices, selected, onSelect, sort, setSort, 
                     <KindIcon kind={d.kind} size={15} />
                   </span>
                   <div className="name-text">
-                    <span className="primary">{d.name}</span>
+                    <span className="primary">
+                      {d.name} <RiskBadge lang={lang} security={d.security} />
+                    </span>
                     {d.description && d.description !== d.name && <span className="secondary">{d.description}</span>}
                   </div>
                 </div>

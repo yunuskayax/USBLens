@@ -1,6 +1,6 @@
 import type { DeviceKind, Lang, StatusFilter, UsbDevice } from "../types";
 import { dict, kindLabels } from "../i18n";
-import { IconBan, IconChevron, IconClock, IconHub, IconLayers, IconPlug, KindIcon } from "./Icons";
+import { IconBan, IconChevron, IconClock, IconHub, IconLayers, IconPlug, IconShieldAlert, KindIcon } from "./Icons";
 
 const KINDS: DeviceKind[] = ["storage", "phone", "hid", "audio", "video", "printer", "network", "bluetooth", "serial", "hub", "other"];
 
@@ -25,6 +25,7 @@ export function Sidebar({ lang, devices, status, setStatus, kinds, toggleKind, h
     { key: "connected", label: t.connected, count: pool.filter((d) => d.connected).length, icon: <IconPlug size={16} />, tone: "on" },
     { key: "history", label: t.history, count: pool.filter((d) => !d.connected).length, icon: <IconClock size={16} />, tone: "off" },
     { key: "disabled", label: t.disabledF, count: pool.filter((d) => d.disabled).length, icon: <IconBan size={16} />, tone: "warn" },
+    { key: "alerts", label: t.alerts, count: pool.filter((d) => d.security.level === "high" || d.security.level === "medium").length, icon: <IconShieldAlert size={16} />, tone: "danger" },
   ];
   const kindCounts = KINDS.map((k) => ({ k, n: pool.filter((d) => d.kind === k).length })).filter(
     (x) => x.n > 0 || kinds.has(x.k),

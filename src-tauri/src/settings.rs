@@ -34,6 +34,30 @@ pub struct Settings {
     pub check_updates_on_start: bool,
     /// Version whose release notes the user has seen (drives the "What's new" dialog).
     pub last_seen_version: String,
+    // Security
+    /// BadUSB-style warnings (keyboard + storage, programmable boards).
+    pub security_alerts: bool,
+    /// Warn when a keyboard is connected for the first time.
+    pub new_keyboard_alert: bool,
+    /// Keep UsbLens' own plug/unplug history.
+    pub event_log: bool,
+    pub allowlist_enabled: bool,
+    /// "warn" | "block"
+    pub allowlist_action: String,
+    /// "storage" | "all"
+    pub allowlist_scope: String,
+    pub allowlist: Vec<AllowEntry>,
+}
+
+/// A trusted device. Matched by VID + PID, and by serial number when one is stored.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct AllowEntry {
+    pub vendor_id: String,
+    pub product_id: String,
+    pub serial_number: Option<String>,
+    pub name: String,
+    pub added_at: String,
 }
 
 impl Default for Settings {
@@ -57,6 +81,13 @@ impl Default for Settings {
             open_explorer_on_storage: false,
             check_updates_on_start: true,
             last_seen_version: String::new(),
+            security_alerts: true,
+            new_keyboard_alert: true,
+            event_log: true,
+            allowlist_enabled: false,
+            allowlist_action: "warn".into(),
+            allowlist_scope: "storage".into(),
+            allowlist: Vec::new(),
         }
     }
 }
@@ -74,6 +105,18 @@ impl Settings {
             self.sound_style = "chime".into();
         }
         self.sound_volume = self.sound_volume.min(100);
+        if self.allowlist_action != "warn" && self.allowlist_action != "block" {
+            self.allowlist_action = "warn".into();
+        }
+        if self.allowlist_scope != "storage" && self.allowlist_scope != "all" {
+            self.allowlist_scope = "storage".into();
+        }
+        for e in &mut self.allowlist {
+            e.vendor_id = e.vendor_id.trim().to_ascii_uppercase();
+            e.product_id = e.product_id.trim().to_ascii_uppercase();
+            e.serial_number = e.serial_number.take().map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+        }
+        self.allowlist.retain(|e| e.vendor_id.len() == 4 && e.product_id.len() == 4);
         self
     }
 }

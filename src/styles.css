@@ -324,3 +324,65 @@ button.admin:hover { text-decoration: underline; }
 .update-progress .bar span.indeterminate { animation: indet 1.2s ease-in-out infinite; }
 @keyframes indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(330%); } }
 .update-actions { align-items: center; flex-wrap: wrap; }
+
+/* ---------- security ---------- */
+:root, [data-theme="dark"] { --danger-soft: rgba(239, 68, 68, 0.14); --warn-soft: rgba(245, 158, 11, 0.14); --info-soft: rgba(56, 189, 248, 0.14); }
+[data-theme="light"] { --danger-soft: rgba(239, 68, 68, 0.1); --warn-soft: rgba(245, 158, 11, 0.12); --info-soft: rgba(14, 165, 233, 0.1); }
+.tone-danger { color: var(--danger); }
+.risk-badge { display: inline-grid; place-items: center; vertical-align: -2px; margin-left: 4px; }
+.risk-badge.high { color: var(--danger); }
+.risk-badge.medium { color: var(--warn); }
+.risk-badge.info { color: #38bdf8; }
+.risk-badge.ok { color: var(--on); opacity: 0.85; }
+.devices tbody tr.risk-high { background: var(--danger-soft); }
+.devices tbody tr.risk-high td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
+.devices tbody tr.risk-high.selected { background: var(--accent-soft); }
+
+.risk-box { margin: 12px 16px 0; padding: 12px 14px; border-radius: 10px; border: 1px solid; font-size: 13px; }
+.risk-box.high { background: var(--danger-soft); border-color: rgba(239, 68, 68, 0.4); }
+.risk-box.medium { background: var(--warn-soft); border-color: rgba(245, 158, 11, 0.4); }
+.risk-box.info { background: var(--info-soft); border-color: rgba(56, 189, 248, 0.35); }
+.risk-head { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.risk-box.high .risk-head { color: var(--danger); }
+.risk-box.medium .risk-head { color: var(--warn); }
+.risk-box.info .risk-head { color: #38bdf8; }
+.risk-box ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
+.btn.ok { color: var(--on); }
+.btn.ok:hover:not(:disabled) { border-color: var(--on); }
+
+.toast .secondary { white-space: pre-line; }
+.empty.small { height: auto; padding: 48px 0; }
+
+/* events view */
+.events { padding: 0 24px 28px; }
+.events-bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
+.seg-count { margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 9px; background: var(--panel-2); color: var(--muted); }
+.seg-count.danger { background: var(--danger); color: #fff; }
+.events-note { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--warn-soft); color: var(--text); font-size: 13px; }
+.events .tl-day h3 { top: 57px; }
+.ev-list { list-style: none; margin: 0; padding: 0; }
+.ev-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
+.ev-row:hover { background: var(--panel); }
+.ev-row.high { background: var(--danger-soft); }
+.ev-row.medium { background: var(--warn-soft); }
+.ev-row time { width: 64px; flex-shrink: 0; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; padding-top: 5px; }
+.ev-action { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0; }
+.ev-action.arrival { color: var(--on); background: rgba(34, 197, 94, 0.12); }
+.ev-action.removal { color: var(--muted); background: var(--panel-2); }
+.ev-main { display: flex; flex-direction: column; gap: 4px; padding-top: 3px; }
+.ev-alerts { display: flex; gap: 6px; align-items: flex-start; font-size: 12.5px; }
+.ev-alerts.high { color: var(--danger); }
+.ev-alerts.medium { color: var(--warn); }
+.ev-alerts.info { color: #38bdf8; }
+.ev-alerts svg { margin-top: 2px; flex-shrink: 0; }
+.ev-user { padding-top: 5px; white-space: nowrap; }
+.tag.blocked { color: #fff; background: var(--danger); align-self: center; }
+
+/* allowlist editor */
+.settings-warn { margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--warn-soft); font-size: 13px; }
+.allow-list { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px; background: var(--panel-2); }
+.allow-list > p { margin: 10px 0; }
+.allow-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.allow-row:last-child { border-bottom: 0; }
+.segmented button { position: relative; }
+.segmented .badge-dot { position: absolute; top: 3px; right: 3px; }

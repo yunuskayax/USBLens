@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import type { Settings, UpdateInfo } from "../types";
+import type { AllowEntry, Settings, UpdateInfo, UsbDevice } from "../types";
 import { dict, errorText } from "../i18n";
 import * as api from "../api";
 import { playUsbSound } from "../sound";
 import { CHANGELOG, ChangelogList, RemoteNotes } from "./Changelog";
-import { IconBell, IconDownload, IconGlobe, IconRefresh, IconWindow, IconX, KindIcon } from "./Icons";
+import { IconBell, IconDownload, IconGlobe, IconRefresh, IconShieldAlert, IconTrash, IconWindow, IconX, KindIcon } from "./Icons";
 
-export type Section = "general" | "window" | "notifications" | "storage" | "updates";
+export type Section = "general" | "window" | "notifications" | "storage" | "security" | "updates";
 
 interface Props {
+  devices: UsbDevice[];
   settings: Settings;
   update: (patch: Partial<Settings>) => void;
   close: () => void;
@@ -61,7 +62,7 @@ function Choice<T extends string>({ value, options, onChange }: {
   );
 }
 
-export function SettingsDialog({ settings: s, update, close, updateInfo, setUpdateInfo, initialSection, autoUpdate }: Props) {
+export function SettingsDialog({ devices, settings: s, update, close, updateInfo, setUpdateInfo, initialSection, autoUpdate }: Props) {
   const t = dict[s.lang];
   const [section, setSection] = useState<Section>(initialSection ?? "general");
   const [phase, setPhase] = useState<UpdatePhase>({ kind: "idle" });
@@ -122,6 +123,7 @@ export function SettingsDialog({ settings: s, update, close, updateInfo, setUpda
     { key: "window", label: t.sWindow, icon: <IconWindow size={16} /> },
     { key: "notifications", label: t.sNotifications, icon: <IconBell size={16} /> },
     { key: "storage", label: t.sStorage, icon: <KindIcon kind="storage" size={16} /> },
+    { key: "security", label: t.sSecurity, icon: <IconShieldAlert size={16} /> },
     { key: "updates", label: t.sUpdates, icon: <IconRefresh size={16} /> },
   ];
 
@@ -193,6 +195,54 @@ export function SettingsDialog({ settings: s, update, close, updateInfo, setUpda
                   <button className="btn" onClick={() => testSound(true)}>{t.test} ▲</button>
                   <button className="btn" onClick={() => testSound(false)}>{t.test} ▼</button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {section === "security" && (
+            <div className="settings-list">
+              <Toggle label={t.securityAlerts} desc={t.securityAlertsDesc} checked={s.securityAlerts} onChange={(securityAlerts) => update({ securityAlerts })} />
+              <Toggle label={t.newKeyboardAlert} desc={t.newKeyboardAlertDesc} checked={s.newKeyboardAlert} onChange={(newKeyboardAlert) => update({ newKeyboardAlert })} />
+              <Toggle label={t.eventLog} desc={t.eventLogDesc} checked={s.eventLog} onChange={(eventLog) => update({ eventLog })} />
+
+              <h3 className="settings-sub">{t.allowlist}</h3>
+              <Toggle label={t.allowlistEnabled} desc={t.allowlistDesc} checked={s.allowlistEnabled} onChange={(allowlistEnabled) => update({ allowlistEnabled })} />
+              <div className={`setting ${s.allowlistEnabled ? "" : "disabled"}`}>
+                <span className="grow">
+                  <span className="setting-label">{t.allowlistAction}</span>
+                  {s.allowlistAction === "block" && <span className="setting-desc">{t.blockNeedsAdmin}</span>}
+                </span>
+                <Choice value={s.allowlistAction} onChange={(allowlistAction) => update({ allowlistAction })} options={[{ value: "warn", label: t.actionWarn }, { value: "block", label: t.actionBlock }]} />
+              </div>
+              <div className={`setting ${s.allowlistEnabled ? "" : "disabled"}`}>
+                <span className="grow"><span className="setting-label">{t.allowlistScope}</span></span>
+                <Choice value={s.allowlistScope} onChange={(allowlistScope) => update({ allowlistScope })} options={[{ value: "storage", label: t.scopeStorage }, { value: "all", label: t.scopeAll }]} />
+              </div>
+              {s.allowlistEnabled && s.allowlistScope === "all" && s.allowlistAction === "block" && <p className="settings-warn">{t.scopeAllWarn}</p>}
+
+              <div className="allow-list">
+                {s.allowlist.length === 0 ? (
+                  <p className="setting-desc">{t.allowlistEmpty}</p>
+                ) : (
+                  s.allowlist.map((e, i) => (
+                    <div key={`${e.vendorId}:${e.productId}:${e.serialNumber ?? "*"}`} className="allow-row">
+                      <div className="grow">
+                        <div className="setting-label">{e.name || `${e.vendorId}:${e.productId}`}</div>
+                        <div className="setting-desc mono">
+                          {e.vendorId}:{e.productId} · {e.serialNumber ?? t.anySerial}
+                        </div>
+                      </div>
+                      <button className="btn" onClick={() => update({ allowlist: s.allowlist.filter((_, j) => j !== i) })}>
+                        <IconTrash size={14} /> {t.remove}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="update-actions" style={{ marginTop: 12 }}>
+                <button className="btn" onClick={() => update({ allowlist: addConnected(devices, s) })}>
+                  {t.addConnected}
+                </button>
               </div>
             </div>
           )}
@@ -275,4 +325,22 @@ export function SettingsDialog({ settings: s, update, close, updateInfo, setUpda
       </div>
     </div>
   );
+}
+
+/** Physical, currently connected devices that are in allowlist scope and not yet listed. */
+function addConnected(devices: UsbDevice[], s: Settings): AllowEntry[] {
+  const now = new Date().toISOString().slice(0, 19) + "Z";
+  const out = [...s.allowlist];
+  for (const d of devices) {
+    const isRoot = d.instanceId === d.security.rootId;
+    if (!d.connected || !isRoot || d.kind === "hub" || !d.vendorId || !d.productId) continue;
+    if (!d.instanceId.toUpperCase().startsWith("USB\\")) continue;
+    if (s.allowlistScope === "storage" && !d.security.storage) continue;
+    // Never trust a suspicious device in bulk; it can still be added on purpose from its details.
+    if (d.security.reasons.some((r) => r !== "NOT_ALLOWED" && !r.startsWith("PROGRAMMABLE_BOARD"))) continue;
+    if (d.security.reasons.some((r) => r.startsWith("PROGRAMMABLE_BOARD")) && d.security.keyboard) continue;
+    if (out.some((e) => api.allowMatches(e, d))) continue;
+    out.push({ vendorId: d.vendorId, productId: d.productId, serialNumber: d.serialNumber, name: d.name, addedAt: now });
+  }
+  return out;
 }

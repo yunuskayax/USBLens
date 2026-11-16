@@ -37,6 +37,7 @@ fn dev(
         first_install: Some(first.into()),
         last_arrival: Some(arrival.into()),
         last_removal: removal.map(Into::into),
+        security: Default::default(),
     }
 }
 
@@ -54,9 +55,20 @@ pub fn list_devices() -> Result<Vec<UsbDevice>, String> {
             "2025-05-05T08:00:00Z", "2026-11-16T06:55:02Z", None),
         dev("USB\\VID_8087&PID_0026\\5&3A2B1C0&0&10", "Intel Wireless Bluetooth", "Bluetooth", "BTHUSB", true, &[],
             "2024-01-10T09:58:00Z", "2026-11-16T06:55:00Z", None),
+        dev("USB\\VID_16D0&PID_0753\\5&1C2B3A4&0&4", "Digispark Keyboard", "HIDClass", "HidUsb", false, &[],
+            "2026-11-15T19:40:00Z", "2026-11-15T19:40:00Z", Some("2026-11-15T19:43:00Z")),
         dev("USB\\ROOT_HUB30\\4&2B5D1F3&0&0", "USB Root Hub (USB 3.0)", "USB", "USBHUB3", true, &[],
             "2024-01-10T09:58:00Z", "2026-11-16T06:55:00Z", None),
     ])
+}
+
+#[allow(dead_code)]
+/// The mock Logitech receiver and Digispark act as keyboards.
+pub fn keyboard_parent_ids() -> std::collections::HashSet<String> {
+    ["USB\\VID_046D&PID_C52B\\6&1A2B3C4D&0&2", "USB\\VID_16D0&PID_0753\\5&1C2B3A4&0&4"]
+        .into_iter()
+        .map(String::from)
+        .collect()
 }
 
 #[allow(dead_code)]

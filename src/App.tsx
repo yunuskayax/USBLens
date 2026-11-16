@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as api from "./api";
-import { dict, errorText, kindLabels } from "./i18n";
+import { dict, errorText, kindLabels, reasonText } from "./i18n";
 import { vidPid } from "./format";
-import type { ChangeEntry, DeviceKind, ExportFormat, Settings, SortKey, StatusFilter, SystemInfo, UpdateInfo, UsbDevice } from "./types";
+import type { ChangeEntry, LogEvent, DeviceKind, ExportFormat, Settings, SortKey, StatusFilter, SystemInfo, UpdateInfo, UsbDevice } from "./types";
 import { Sidebar } from "./components/Sidebar";
 import { DeviceTable } from "./components/DeviceTable";
 import { DetailPanel } from "./components/DetailPanel";
@@ -10,9 +10,10 @@ import { Timeline } from "./components/Timeline";
 import { ConfirmDialog, Toasts, type ConfirmState, type Toast } from "./components/Overlays";
 import { AboutDialog } from "./components/About";
 import { SettingsDialog, type Section } from "./components/SettingsDialog";
+import { EventsView } from "./components/EventsView";
 import { CHANGELOG, WhatsNewDialog, versionGt } from "./components/Changelog";
 import { playUsbSound } from "./sound";
-import { IconClock, IconDownload, IconGlobe, IconInfo, IconMoon, IconRefresh, IconSearch, IconSettings, IconShield, IconSun, IconTable } from "./components/Icons";
+import { IconClock, IconDownload, IconGlobe, IconInfo, IconList, IconMoon, IconRefresh, IconSearch, IconSettings, IconShield, IconSun, IconTable } from "./components/Icons";
 
 // localStorage can be missing or throw in some webview contexts.
 function load<T>(key: string, fallback: T): T {
@@ -73,7 +74,11 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [kinds, setKinds] = useState<Set<DeviceKind>>(new Set());
-  const [view, setView] = useState<"table" | "timeline">("table");
+  const [view, setView] = useState<"table" | "timeline" | "events">("table");
+  const [events, setEvents] = useState<LogEvent[]>([]);
+  const loadEvents = useCallback(() => {
+    api.listEvents().then(setEvents).catch(() => {});
+  }, []);
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: "lastArrival", asc: false });
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -177,6 +182,25 @@ export default function App() {
     };
   }, [toast, updateSettings]);
 
+  // Security settings change the analysis done in Rust: re-read the list after they are saved.
+  const securityKey = JSON.stringify([
+    settings.securityAlerts, settings.newKeyboardAlert, settings.allowlistEnabled,
+    settings.allowlistAction, settings.allowlistScope, settings.allowlist,
+  ]);
+  const firstSecurityKey = useRef(true);
+  useEffect(() => {
+    if (firstSecurityKey.current) {
+      firstSecurityKey.current = false;
+      return;
+    }
+    const h = setTimeout(refresh, 500);
+    return () => clearTimeout(h);
+  }, [securityKey, refresh]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
   // Live USB events from the Rust side.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -188,11 +212,20 @@ export default function App() {
       const extra = [ev.device && vidPid(ev.device), ev.device?.serialNumber, ev.device?.driveLetters.join(" ")]
         .filter(Boolean)
         .join(" · ");
-      toast({ kind: arrival ? "in" : "out", title: `${name} ${arrival ? l.plugged : l.unplugged}`, body: extra || undefined });
+      const serious = ev.level === "high" || ev.level === "medium";
+      if (ev.alerts.length) {
+        const title = ev.blocked ? `⛔ ${l.blocked}: ${name}` : `⚠ ${l.securityToastTitle}: ${name}`;
+        const lines = ev.alerts.map((a) => reasonText(st.lang, a));
+        if (ev.blockError) lines.push(`${l.blockFailed}: ${errorText(st.lang, ev.blockError)}`);
+        toast({ kind: serious ? "error" : "info", title, body: lines.join("\n") });
+      } else {
+        toast({ kind: arrival ? "in" : "out", title: `${name} ${arrival ? l.plugged : l.unplugged}`, body: extra || undefined });
+      }
       if ((arrival ? st.soundOnArrival : st.soundOnRemoval) && ev.device) {
         playUsbSound({ arrival, style: st.soundStyle, volume: st.soundVolume, lang: st.lang, name, storage: ev.device.kind === "storage" });
       }
-      const wantNotify = st.systemNotifications && (arrival || st.notifyOnRemoval);
+      // Serious security alerts are already sent as Windows notifications by the Rust side.
+      const wantNotify = st.systemNotifications && (arrival || st.notifyOnRemoval) && !serious;
       if (wantNotify && (document.hidden || !document.hasFocus())) {
         api.systemNotify(`UsbLens — ${arrival ? l.arrived : l.removed}`, `${name}${extra ? `\n${extra}` : ""}`);
       }
@@ -204,12 +237,13 @@ export default function App() {
       // Debounced refresh; drive letters often appear a moment later.
       clearTimeout(timer);
       timer = setTimeout(refresh, 1200);
+      loadEvents();
     });
     return () => {
       clearTimeout(timer);
       unlisten.then((fn) => fn());
     };
-  }, [refresh, toast]);
+  }, [refresh, toast, loadEvents]);
 
   // Keyboard: Ctrl+F focuses search, F5 refreshes.
   useEffect(() => {
@@ -239,6 +273,7 @@ export default function App() {
       if (status === "connected" && !d.connected) return false;
       if (status === "history" && d.connected) return false;
       if (status === "disabled" && !d.disabled) return false;
+      if (status === "alerts" && d.security.level !== "high" && d.security.level !== "medium") return false;
       if (kinds.size && !kinds.has(d.kind)) return false;
       if (!q) return true;
       const hay = [d.name, d.description, d.serialNumber, vidPid(d), d.instanceId, d.manufacturer, d.className, kindLabels[lang][d.kind], ...d.driveLetters]
@@ -259,6 +294,19 @@ export default function App() {
   }, [devices, query, status, kinds, hideHubs, sort, lang]);
 
   const selectedDevice = devices.find((d) => d.instanceId === selected) ?? null;
+  const selectedRoot = selectedDevice ? (devices.find((d) => d.instanceId === selectedDevice.security.rootId) ?? selectedDevice) : null;
+  const toggleAllow = (root: UsbDevice) => {
+    const list = settingsRef.current.allowlist;
+    const matches = list.filter((e) => api.allowMatches(e, root));
+    if (matches.length) {
+      updateSettings({ allowlist: list.filter((e) => !matches.includes(e)) });
+    } else if (root.vendorId && root.productId) {
+      const addedAt = new Date().toISOString().slice(0, 19) + "Z";
+      updateSettings({
+        allowlist: [...list, { vendorId: root.vendorId, productId: root.productId, serialNumber: root.serialNumber, name: root.name, addedAt }],
+      });
+    }
+  };
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -334,6 +382,16 @@ export default function App() {
           <button className={view === "timeline" ? "on" : ""} onClick={() => setView("timeline")}>
             <IconClock size={15} /> {t.timeline}
           </button>
+          <button
+            className={view === "events" ? "on" : ""}
+            onClick={() => {
+              setView("events");
+              loadEvents();
+            }}
+          >
+            <IconList size={15} /> {t.events}
+            {events.some((e) => e.level === "high") && <span className="badge-dot" />}
+          </button>
         </div>
 
         <div className="top-actions">
@@ -387,6 +445,30 @@ export default function App() {
         <main className="content">
           {loading && devices.length === 0 ? (
             <div className="empty">{t.loading}</div>
+          ) : view === "events" ? (
+            <EventsView
+              lang={lang}
+              events={events}
+              enabled={settings.eventLog}
+              query={query}
+              onSelect={(id) => setSelected(devices.some((d) => d.instanceId === id) ? id : null)}
+              onExport={async (format) => {
+                try {
+                  const path = await api.exportEvents(format, lang, sys?.computerName ?? "");
+                  if (path) toast({ kind: "ok", title: t.exported, body: path });
+                } catch (e) {
+                  toast({ kind: "error", title: errorText(lang, e) });
+                }
+              }}
+              onClear={() =>
+                setConfirm({
+                  title: t.clearLogTitle,
+                  body: t.clearLogBody,
+                  danger: true,
+                  onConfirm: () => api.clearEvents().then(loadEvents).catch((e) => toast({ kind: "error", title: errorText(lang, e) })),
+                })
+              }
+            />
           ) : view === "table" ? (
             <DeviceTable lang={lang} devices={filtered} selected={selected} onSelect={setSelected} sort={sort} setSort={setSort} flash={flash} />
           ) : (
@@ -403,6 +485,9 @@ export default function App() {
             onToggleEnabled={onToggleEnabled}
             onEject={onEject}
             onUninstall={onUninstall}
+            root={selectedRoot}
+            isAllowlisted={!!selectedRoot && settings.allowlist.some((e) => api.allowMatches(e, selectedRoot))}
+            onToggleAllow={toggleAllow}
           />
         )}
       </div>
@@ -444,6 +529,7 @@ export default function App() {
       <Toasts toasts={toasts} dismiss={dismiss} />
       {settingsOpen && (
         <SettingsDialog
+          devices={devices}
           settings={settings}
           update={updateSettings}
           close={closeSettings}

@@ -1,7 +1,7 @@
 {
-  "version": "0.2.5",
-  "date": "2026-11-16",
+  "version": "0.3.0",
+  "date": "2026-11-17",
   "url": "https://github.com/yunuskayax/USBLens/releases/latest/download/UsbLens-setup.exe",
   "page": "https://usblens.com",
-  "notes": "Uygulama içinden tek tıkla güncelleme."
+  "notes": "USB güvenliği: BadUSB uyarısı, beyaz liste, olay günlüğü."
 }

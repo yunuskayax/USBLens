@@ -2,6 +2,26 @@
 
 Bu dosya `src/changelog.json` dosyasından üretilir (`node scripts/changelog.mjs md`).
 
+## 0.3.0 — 2026-11-17
+
+- **Yeni:** BadUSB uyarısı: hem klavye hem depolama gibi davranan cihazlar ve klavye taklidi yapabilen programlanabilir kartlar (Arduino, Digispark, Pico…) işaretlenir
+- **Yeni:** Yeni klavye uyarısı: bilgisayara ilk kez takılan klavyeler için uyarı
+- **Yeni:** Beyaz liste: yalnızca izin verilen cihazlara güven; listede olmayanlar için uyar veya otomatik engelle
+- **Yeni:** Olay günlüğü: her takma ve çıkarma; zaman, kullanıcı ve uyarılarla kaydedilir, CSV/JSON olarak dışa aktarılır
+- **Yeni:** "Uyarılar" filtresi, tabloda risk simgeleri ve ayrıntı panelinde güvenlik kutusu
+- **İyileştirme:** Güvenlik uyarıları uygulama tepsideyken de Windows bildirimi olarak gelir
+
+<details><summary>English</summary>
+
+- **New:** BadUSB warning: flags devices acting as both keyboard and storage, and programmable boards that can pretend to be keyboards (Arduino, Digispark, Pico…)
+- **New:** New keyboard warning for keyboards connected for the first time
+- **New:** Allowlist: trust only approved devices; warn about or automatically block the rest
+- **New:** Event log: every plug and unplug recorded with time, user and alerts; export to CSV/JSON
+- **New:** "Alerts" filter, risk icons in the table and a security box in device details
+- **Improved:** Security alerts arrive as Windows notifications even while the app is in the tray
+
+</details>
+
 ## 0.2.5 — 2026-11-16
 
 - **Yeni:** Uygulama içinden tek tıkla güncelleme: indirir, SHA-256 ile doğrular, kurar ve yeniden açılır

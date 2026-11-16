@@ -1,13 +1,16 @@
+mod events;
 mod export;
 mod model;
 mod platform;
+mod security;
 mod settings;
 mod update;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use model::{DeviceKind, SystemInfo, UsbDevice, UsbEvent};
+use events::{EventLog, LogEvent};
+use model::{DeviceKind, RiskLevel, SystemInfo, UsbDevice, UsbEvent};
 use settings::{Settings, SettingsStore};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -42,9 +45,43 @@ where
         .map_err(|e| e.to_string())?
 }
 
+/// Device list with security analysis applied.
+fn analyzed_devices(settings: &Settings) -> Result<Vec<UsbDevice>, String> {
+    let mut list = platform::list_devices()?;
+    security::annotate(&mut list, &platform::keyboard_parent_ids(), settings, chrono::Utc::now());
+    Ok(list)
+}
+
 #[tauri::command]
-async fn list_devices() -> Result<Vec<UsbDevice>, String> {
-    blocking(platform::list_devices).await
+async fn list_devices(store: State<'_, SettingsStore>) -> Result<Vec<UsbDevice>, String> {
+    let settings = store.get();
+    blocking(move || analyzed_devices(&settings)).await
+}
+
+// ---------------------------------------------------------------- event log
+
+#[tauri::command]
+async fn list_events(app: AppHandle, limit: Option<usize>) -> Result<Vec<LogEvent>, String> {
+    blocking(move || Ok(app.state::<EventLog>().list(limit.unwrap_or(2000)))).await
+}
+
+#[tauri::command]
+async fn clear_events(app: AppHandle) -> Result<(), String> {
+    blocking(move || app.state::<EventLog>().clear()).await
+}
+
+#[tauri::command]
+async fn export_events(app: AppHandle, path: String, format: String, lang: String) -> Result<(), String> {
+    blocking(move || {
+        let list = app.state::<EventLog>().list(usize::MAX);
+        let content = match format.as_str() {
+            "csv" => events::to_csv(&list, &lang),
+            "json" => serde_json::to_string_pretty(&list).map_err(|e| e.to_string())?,
+            other => return Err(format!("unknown format: {other}")),
+        };
+        std::fs::write(&path, content).map_err(|e| e.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -235,8 +272,63 @@ fn tray_hint(app: &AppHandle, s: &Settings) {
 
 // ---------------------------------------------------------------- storage triggers
 
+/// Security analysis, allowlist enforcement and logging for a plug / unplug event.
+/// Runs on the monitor worker thread, so it may block briefly.
+fn process_usb_event(app: &AppHandle, mut event: UsbEvent) -> UsbEvent {
+    let s = app.state::<SettingsStore>().get();
+
+    if event.action == "arrival" && event.instance_id.is_some() {
+        // Let Windows finish enumerating the interfaces (keyboard, storage) of the new device.
+        std::thread::sleep(Duration::from_millis(1200));
+        let id = event.instance_id.clone().unwrap_or_default();
+        if let Ok(list) = analyzed_devices(&s) {
+            if let Some(d) = list.into_iter().find(|d| d.instance_id.eq_ignore_ascii_case(&id)) {
+                event.alerts = d.security.reasons.clone();
+                event.level = d.security.level;
+                if d.security.allowed == Some(false) && s.allowlist_action == "block" {
+                    match platform::set_enabled(&d.security.root_id, false) {
+                        Ok(()) => event.blocked = true,
+                        Err(e) => event.block_error = Some(e),
+                    }
+                }
+                event.device = Some(d);
+            }
+        }
+        if event.level >= RiskLevel::Medium && s.system_notifications {
+            security_notification(app, &event, &s.lang);
+        }
+    }
+
+    if s.event_log {
+        let user = std::env::var(if cfg!(windows) { "USERNAME" } else { "USER" }).unwrap_or_default();
+        let at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+        if let Err(e) = app.state::<EventLog>().append(&LogEvent::from_event(&event, at, user)) {
+            eprintln!("event log: {e}");
+        }
+    }
+    event
+}
+
+fn security_notification(app: &AppHandle, event: &UsbEvent, lang: &str) {
+    let tr = lang == "tr";
+    let name = event.device.as_ref().map(|d| d.name.as_str()).unwrap_or("USB");
+    let title = match (event.blocked, tr) {
+        (true, true) => format!("⛔ Engellendi: {name}"),
+        (true, false) => format!("⛔ Blocked: {name}"),
+        (false, true) => format!("⚠ Güvenlik uyarısı: {name}"),
+        (false, false) => format!("⚠ Security alert: {name}"),
+    };
+    let body = event
+        .alerts
+        .iter()
+        .map(|r| security::reason_text(r, lang))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let _ = app.notification().builder().title(title).body(body).show();
+}
+
 fn on_usb_event(app: &AppHandle, event: &UsbEvent) {
-    if event.action != "arrival" {
+    if event.action != "arrival" || event.blocked {
         return;
     }
     let Some(device) = &event.device else { return };
@@ -294,6 +386,8 @@ pub fn run() {
             let store = SettingsStore::load(config_dir.join("settings.json"));
             let s = store.get();
             app.manage(store);
+            let data_dir = app.path().app_data_dir()?;
+            app.manage(EventLog::new(data_dir.join("events.jsonl")));
 
             let handle = app.handle().clone();
             if let Err(e) = build_tray(&handle, &s.lang) {
@@ -316,6 +410,7 @@ pub fn run() {
 
             let monitor_handle = handle.clone();
             if let Err(e) = platform::start_monitor(move |event| {
+                let event = process_usb_event(&monitor_handle, event);
                 on_usb_event(&monitor_handle, &event);
                 let _ = monitor_handle.emit("usb-event", event);
             }) {
@@ -347,6 +442,9 @@ pub fn run() {
             check_update,
             download_update,
             install_update,
+            list_events,
+            clear_events,
+            export_events,
         ])
         .run(tauri::generate_context!())
         .expect("error while running UsbLens");

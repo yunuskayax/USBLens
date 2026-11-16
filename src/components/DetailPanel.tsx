@@ -2,7 +2,8 @@ import { useState } from "react";
 import type { Lang, UsbDevice } from "../types";
 import { dict, kindLabels } from "../i18n";
 import { formatDate } from "../format";
-import { IconCopy, IconEject, IconPower, IconTrash, IconX, KindIcon } from "./Icons";
+import { IconCopy, IconEject, IconPower, IconShieldCheck, IconTrash, IconX, KindIcon } from "./Icons";
+import { RiskBox } from "./Security";
 
 interface Props {
   lang: Lang;
@@ -12,9 +13,13 @@ interface Props {
   onToggleEnabled: (d: UsbDevice) => void;
   onEject: (d: UsbDevice) => void;
   onUninstall: (d: UsbDevice) => void;
+  /** Root (physical) device used for allowlist identity; null when unknown. */
+  root: UsbDevice | null;
+  isAllowlisted: boolean;
+  onToggleAllow: (root: UsbDevice) => void;
 }
 
-export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, onEject, onUninstall }: Props) {
+export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, onEject, onUninstall, root, isAllowlisted, onToggleAllow }: Props) {
   const t = dict[lang];
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -31,6 +36,8 @@ export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, o
   const rows: [string, string | null | undefined, boolean?][] = [
     [t.status, d.disabled ? t.disabledF : d.connected ? t.connected : t.history],
     [t.type, kindLabels[lang][d.kind]],
+    [t.interfaces, [d.security.keyboard && t.keyboardCap, d.security.storage && t.storageCap].filter(Boolean).join(", ")],
+    [t.allowlist, d.security.allowed == null ? null : d.security.allowed ? t.allowedTag : t.notAllowedTag],
     ["VID", d.vendorId],
     ["PID", d.productId],
     [t.serial, d.serialNumber, true],
@@ -66,6 +73,8 @@ export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, o
         </button>
       </header>
 
+      <RiskBox lang={lang} security={d.security} />
+
       <div className="actions">
         <button className="btn" disabled={busy} onClick={() => onToggleEnabled(d)}>
           <IconPower size={15} /> {d.disabled ? t.enable : t.disable}
@@ -76,6 +85,11 @@ export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, o
         <button className="btn danger" disabled={busy} onClick={() => onUninstall(d)}>
           <IconTrash size={15} /> {t.uninstall}
         </button>
+        {root && root.vendorId && root.productId && (
+          <button className={`btn ${isAllowlisted ? "" : "ok"}`} onClick={() => onToggleAllow(root)}>
+            <IconShieldCheck size={15} /> {isAllowlisted ? t.removeFromAllowlist : t.addToAllowlist}
+          </button>
+        )}
       </div>
 
       <dl className="props">

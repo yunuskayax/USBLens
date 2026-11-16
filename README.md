@@ -43,12 +43,33 @@ ve sürücü harfleriyle listeler. Canlı takılma bildirimi verir ve adli bili�
 - Sistem tepsisi simgesi (Göster / Ayarlar / Çıkış), tek örnek çalışma.
 - Daraltılabilir kenar çubuğu (`Ctrl+B`), koyu / açık tema, Türkçe / İngilizce arayüz, `Ctrl+F` arama, `F5` yenile.
 
+## USB güvenliği
+
+- **BadUSB uyarısı:** Hem klavye hem depolama gibi davranan cihazlar ve klavye taklidi yapabilen programlanabilir
+  kartlar (Arduino, Digispark, Raspberry Pi Pico, Teensy, Adafruit…) işaretlenir. Klavye tespiti Windows'un
+  HID klavye kayıtlarından, cihazın asıl USB aygıtına kadar izlenerek yapılır.
+- **Yeni klavye uyarısı:** Bilgisayara ilk kez takılan klavyeler için uyarı (saldırı cihazları genelde sıradan bir klavye gibi görünür).
+- **Beyaz liste:** VID + PID (+ isteğe bağlı seri no) ile güvenilir cihaz listesi. Listede olmayan cihaz takılınca
+  **uyar** veya **engelle** (cihazı devre dışı bırakır, yönetici yetkisi gerekir). Kapsam: yalnızca depolama veya tüm USB cihazları.
+- **Olay günlüğü:** Windows yalnızca son takılma zamanını saklar; UsbLens her takma/çıkarmayı zaman, kullanıcı ve
+  uyarılarla `%APPDATA%\com.yunus.usblens\events.jsonl` dosyasına yazar. CSV / JSON olarak dışa aktarılabilir.
+
+Bu kontroller Rust tarafında çalışır; uygulama tepsideyken de uyarı ve engelleme yapılır.
+Kural motoru ve testleri: [`src-tauri/src/security.rs`](src-tauri/src/security.rs).
+
+> Not: Bu bir uyarı aracıdır, tam bir uç nokta koruma (EDR) çözümü değildir. Kötü niyetli bir cihaz bilinen bir
+> klavyenin kimliğini taklit edebilir; beyaz liste ve uyarılar riski azaltır ama sıfırlamaz.
+
 ## Ekran görüntüleri
 
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/details.png" alt="Cihaz ayrıntıları" /><br/><sub><b>Cihaz ayrıntıları ve işlemler</b> — seri no, VID/PID, tarihler, devre dışı bırak / güvenli çıkar / kaldır</sub></td>
     <td width="50%"><img src="docs/screenshots/timeline-light.png" alt="Zaman çizelgesi" /><br/><sub><b>Zaman çizelgesi</b> (açık tema) — hangi cihaz ne zaman takıldı / çıkarıldı</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/security.png" alt="BadUSB uyarısı" /><br/><sub><b>BadUSB uyarısı</b> — hem klavye hem depolama gibi davranan cihaz</sub></td>
+    <td width="50%"><img src="docs/screenshots/events.png" alt="Olay günlüğü" /><br/><sub><b>Olay günlüğü</b> — her takma/çıkarma, kullanıcı ve uyarılar</sub></td>
   </tr>
   <tr>
     <td width="50%"><img src="docs/screenshots/settings.png" alt="Ayarlar" /><br/><sub><b>Ayarlar</b> — bildirimler, sesli uyarı, pencere, depolama aygıtları, güncellemeler</sub></td>

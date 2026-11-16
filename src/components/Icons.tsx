@@ -29,6 +29,11 @@ export const IconPlug = ({ size }: P) => svg(<><path d="M9 2v6M15 2v6" /><path d
 export const IconBan = ({ size }: P) => svg(<><circle cx="12" cy="12" r="9" /><path d="m5.6 5.6 12.8 12.8" /></>, size);
 export const IconHub = ({ size }: P) => svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v7M12 15v7M2 12h7M15 12h7" /></>, size);
 export const IconChevron = ({ size }: P) => svg(<><path d="m15 6-6 6 6 6" /><path d="M20 4v16" /></>, size);
+export const IconShieldAlert = ({ size }: P) => svg(<><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" /><path d="M12 8v5M12 16.5h.01" /></>, size);
+export const IconShieldCheck = ({ size }: P) => svg(<><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" /><path d="m9 12 2 2 4-4" /></>, size);
+export const IconList = ({ size }: P) => svg(<><path d="M8 6h13M8 12h13M8 18h13" /><path d="M3 6h.01M3 12h.01M3 18h.01" /></>, size);
+export const IconArrowIn = ({ size }: P) => svg(<><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></>, size);
+export const IconArrowOut = ({ size }: P) => svg(<><path d="M12 15V3" /><path d="m7 8 5-5 5 5" /><path d="M5 21h14" /></>, size);
 export const IconInfo = ({ size }: P) => svg(<><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5h.01" /></>, size);
 export const IconExternal = ({ size }: P) => svg(<><path d="M14 4h6v6M20 4l-9 9" /><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" /></>, size);
 export const IconGlobe = ({ size }: P) => svg(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18" /></>, size);

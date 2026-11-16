@@ -1,5 +1,5 @@
-import type { ExportFormat, Lang, Settings, SystemInfo, UpdateInfo, UsbDevice, UsbEvent } from "./types";
-import { mockDevices, mockSystem } from "./mock";
+import type { AllowEntry, ExportFormat, Lang, LogEvent, Settings, SystemInfo, UpdateInfo, UsbDevice, UsbEvent } from "./types";
+import { mockDevices, mockEvents, mockSystem } from "./mock";
 
 /** True inside the Tauri webview, false in a plain browser tab. */
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -9,8 +9,25 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
   return invoke<T>(cmd, args);
 }
 
+export function allowMatches(e: AllowEntry, d: Pick<UsbDevice, "vendorId" | "productId" | "serialNumber">): boolean {
+  if (!d.vendorId || !d.productId) return false;
+  if (e.vendorId.toUpperCase() !== d.vendorId.toUpperCase() || e.productId.toUpperCase() !== d.productId.toUpperCase()) return false;
+  if (!e.serialNumber) return true;
+  return !!d.serialNumber && e.serialNumber.toUpperCase() === d.serialNumber.toUpperCase();
+}
+
 export async function listDevices(): Promise<UsbDevice[]> {
-  if (!inTauri) return structuredClone(mockDevices);
+  if (!inTauri) {
+    // Browser preview: approximate the Rust allowlist check so the UI can be tried out.
+    const s = await getSettings();
+    return structuredClone(mockDevices).map((d) => {
+      const inScope = s.allowlistEnabled && d.kind !== "hub" && (s.allowlistScope === "all" || d.kind === "storage");
+      if (!inScope) return d;
+      const ok = s.allowlist.some((e) => allowMatches(e, d));
+      const reasons = ok ? d.security.reasons : [...d.security.reasons, "NOT_ALLOWED"];
+      return { ...d, security: { ...d.security, allowed: ok, reasons, level: ok ? d.security.level : "high" } };
+    });
+  }
   return invoke<UsbDevice[]>("list_devices");
 }
 
@@ -91,7 +108,7 @@ export async function systemNotify(title: string, body: string): Promise<void> {
 export const WEBSITE = "https://usblens.com";
 
 export async function appVersion(): Promise<string> {
-  if (!inTauri) return "0.2.5";
+  if (!inTauri) return "0.3.0";
   const { getVersion } = await import("@tauri-apps/api/app");
   return getVersion();
 }
@@ -125,6 +142,13 @@ export const defaultSettings: Settings = {
   openExplorerOnStorage: false,
   checkUpdatesOnStart: true,
   lastSeenVersion: "",
+  securityAlerts: true,
+  newKeyboardAlert: true,
+  eventLog: true,
+  allowlistEnabled: false,
+  allowlistAction: "warn",
+  allowlistScope: "storage",
+  allowlist: [],
 };
 
 // Browser preview keeps settings in localStorage; the app keeps them in Rust.
@@ -160,15 +184,15 @@ let mockProgress: ((d: number, t: number | null) => void) | null = null;
 export async function checkUpdate(): Promise<UpdateInfo> {
   if (!inTauri && mockUpdate) {
     return {
-      current: "0.2.4", latest: "0.2.5", available: true, date: "2026-11-20",
+      current: "0.3.0", latest: "0.3.1", available: true, date: "2026-11-20",
       url: "https://github.com/yunuskayax/USBLens/releases/latest",
-      installer: "https://github.com/yunuskayax/USBLens/releases/download/v0.2.5/UsbLens-setup.exe",
+      installer: "https://github.com/yunuskayax/USBLens/releases/download/v0.3.1/UsbLens-setup.exe",
       sha256: null, size: 2_100_000,
       notes: "### Yenilikler\n- **Yeni:** Uygulama içinden tek tıkla güncelleme\n- **Düzeltme:** Küçük hata düzeltmeleri\n\n### What's new\n- **New:** One-click in-app updates\n- **Fixed:** Small bug fixes",
     };
   }
   if (!inTauri) {
-    return { current: "0.2.5", latest: "0.2.5", available: false, url: null, notes: null, date: null, installer: null, sha256: null, size: null };
+    return { current: "0.3.0", latest: "0.3.0", available: false, url: null, notes: null, date: null, installer: null, sha256: null, size: null };
   }
   return invoke<UpdateInfo>("check_update");
 }
@@ -206,4 +230,30 @@ export async function onUpdateProgress(handler: (downloaded: number, total: numb
   }
   const { listen } = await import("@tauri-apps/api/event");
   return listen<{ downloaded: number; total: number | null }>("update-progress", (e) => handler(e.payload.downloaded, e.payload.total));
+}
+
+// ---------------------------------------------------------------- event log
+
+export async function listEvents(limit = 2000): Promise<LogEvent[]> {
+  if (!inTauri) return structuredClone(mockEvents);
+  return invoke<LogEvent[]>("list_events", { limit });
+}
+
+export async function clearEvents(): Promise<void> {
+  if (!inTauri) {
+    mockEvents.length = 0;
+    return;
+  }
+  return invoke("clear_events");
+}
+
+export async function exportEvents(format: "csv" | "json", lang: Lang, computerName: string): Promise<string | null> {
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+  const fileName = `usblens-olaylar-${computerName || "pc"}-${stamp}.${format}`;
+  if (!inTauri) return null;
+  const { save } = await import("@tauri-apps/plugin-dialog");
+  const path = await save({ defaultPath: fileName, filters: [{ name: format.toUpperCase(), extensions: [format] }] });
+  if (!path) return null;
+  await invoke("export_events", { path, format, lang });
+  return path;
 }

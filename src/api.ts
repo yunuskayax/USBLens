@@ -91,7 +91,7 @@ export async function systemNotify(title: string, body: string): Promise<void> {
 export const WEBSITE = "https://yunuskaya.com.tr";
 
 export async function appVersion(): Promise<string> {
-  if (!inTauri) return "0.2.0";
+  if (!inTauri) return "0.2.1";
   const { getVersion } = await import("@tauri-apps/api/app");
   return getVersion();
 }
@@ -153,7 +153,7 @@ export async function saveSettings(settings: Settings): Promise<Settings> {
 
 export async function checkUpdate(): Promise<UpdateInfo> {
   if (!inTauri) {
-    return { current: "0.2.0", latest: "0.2.0", available: false, url: null, notes: null, date: null };
+    return { current: "0.2.1", latest: "0.2.1", available: false, url: null, notes: null, date: null };
   }
   return invoke<UpdateInfo>("check_update");
 }

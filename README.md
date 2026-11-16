@@ -1,22 +1,76 @@
-# UsbLens
+<p align="center">
+  <img src="src-tauri/icons/128x128@2x.png" width="110" alt="UsbLens logo" />
+</p>
 
-USBDeview'den ilham alan, modern arayüzlü, açık kaynak bir **Windows USB cihaz görüntüleyici**.
+<h1 align="center">UsbLens</h1>
+
+<p align="center">
+  USBDeview'den ilham alan, modern arayüzlü, açık kaynak <b>Windows USB cihaz görüntüleyici</b>.<br/>
+  <i>A modern, open-source USB device viewer for Windows, inspired by NirSoft USBDeview.</i>
+</p>
+
+<p align="center">
+  <a href="https://github.com/yunuskayax/USBLens/releases/latest"><img alt="Sürüm" src="https://img.shields.io/github/v/release/yunuskayax/USBLens?include_prereleases&label=s%C3%BCr%C3%BCm&color=5b7cfa"></a>
+  <a href="https://github.com/yunuskayax/USBLens/actions/workflows/build.yml"><img alt="Derleme" src="https://img.shields.io/github/actions/workflow/status/yunuskayax/USBLens/build.yml?branch=main&label=derleme"></a>
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D6">
+  <a href="LICENSE"><img alt="Lisans" src="https://img.shields.io/badge/lisans-MIT-green"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/yunuskayax/USBLens/releases/latest"><b>⬇ İndir</b></a> ·
+  <a href="#özellikler">Özellikler</a> ·
+  <a href="#ekran-görüntüleri">Ekran görüntüleri</a> ·
+  <a href="#geliştirme">Geliştirme</a> ·
+  <a href="https://yunuskaya.com.tr">yunuskaya.com.tr</a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/main-dark.png" alt="UsbLens ana ekran" width="900" />
+</p>
+
 Bilgisayara şu an bağlı olan ve **geçmişte bağlanmış** tüm USB cihazlarını tarihleri, seri numaraları
-ve sürücü harfleriyle listeler.
+ve sürücü harfleriyle listeler. Canlı takılma bildirimi verir ve adli bilişim için raporlanabilir çıktı üretir.
 
-*A modern, open-source USB device viewer for Windows, inspired by NirSoft USBDeview.*
+## Özellikler
 
-## Özellikler (v0.1)
-
-- **Liste + arama + filtre:** Bağlı / geçmiş / devre dışı, cihaz türü (depolama, telefon, HID, kamera…), anlık arama (ad, seri no, `VID:PID`, sürücü harfi). Sütunlara tıklayarak sıralama.
+- **Liste, arama, filtre:** Bağlı / geçmiş / devre dışı, cihaz türü (depolama, telefon, HID, kamera…), anlık arama (ad, seri no, `VID:PID`, sürücü harfi). Sütunlara tıklayarak sıralama.
 - **Tarihler:** İlk kurulum, son takılma, son çıkarılma (Windows PnP özelliklerinden).
-- **Zaman çizelgesi:** Hangi gün hangi cihazın takıldığını/çıkarıldığını gün gün gösterir.
+- **Zaman çizelgesi:** Hangi gün hangi cihazın takıldığını / çıkarıldığını gün gün gösterir.
 - **Cihaz işlemleri:** Etkinleştir / devre dışı bırak, güvenli çıkar, kaldır (geçmiş kayıtlar dahil).
-- **Canlı bildirim:** USB takılınca/çıkarılınca uygulama içi uyarı + Windows bildirimi, liste otomatik yenilenir.
+- **Canlı bildirim:** USB takılınca / çıkarılınca uygulama içi uyarı, Windows bildirimi ve sesli uyarı (kısa ton veya cihaz adını sesli okuma).
 - **Dışa aktarma:** HTML rapor (yazdır → PDF), CSV (Excel uyumlu, Türkçe karakterli) ve JSON. Rapora bilgisayar adı, kullanıcı, zaman damgası ve **SHA-256** özeti eklenir.
-- **Ayarlar:** Her zaman üstte, kapatınca sistem tepsisine küçült, Windows ile başlat, küçültülmüş başlat; Windows bildirimi, takılınca/çıkarılınca sesli uyarı (kısa ton veya cihaz adını sesli okuma, ses düzeyi); depolama aygıtı takılınca uygulamayı öne getir / sürücüyü Gezgin'de aç; açılışta güncelleme denetimi.
-- Sistem tepsisi simgesi (Göster / Ayarlar / Çıkış), tek örnek çalışma (ikinci kez açınca mevcut pencere öne gelir).
-- Koyu/açık tema, Türkçe/İngilizce arayüz, `Ctrl+F` arama, `F5` yenile.
+- **Ayarlar:** Her zaman üstte, kapatınca sistem tepsisine küçült, Windows ile başlat, küçültülmüş başlat; depolama aygıtı takılınca uygulamayı öne getir / sürücüyü Gezgin'de aç; açılışta güncelleme denetimi.
+- Sistem tepsisi simgesi (Göster / Ayarlar / Çıkış), tek örnek çalışma.
+- Koyu / açık tema, Türkçe / İngilizce arayüz, `Ctrl+F` arama, `F5` yenile.
+
+## Ekran görüntüleri
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/details.png" alt="Cihaz ayrıntıları" /><br/><sub><b>Cihaz ayrıntıları ve işlemler</b> — seri no, VID/PID, tarihler, devre dışı bırak / güvenli çıkar / kaldır</sub></td>
+    <td width="50%"><img src="docs/screenshots/timeline-light.png" alt="Zaman çizelgesi" /><br/><sub><b>Zaman çizelgesi</b> (açık tema) — hangi cihaz ne zaman takıldı / çıkarıldı</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/settings.png" alt="Ayarlar" /><br/><sub><b>Ayarlar</b> — bildirimler, sesli uyarı, pencere, depolama aygıtları, güncellemeler</sub></td>
+    <td width="50%"><img src="docs/screenshots/main-en.png" alt="English UI" /><br/><sub><b>English UI</b> — Türkçe / İngilizce arayüz</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/export.png" alt="Dışa aktarma" /><br/><sub><b>Dışa aktarma</b> — HTML rapor, CSV, JSON</sub></td>
+    <td width="50%" align="center"><img src="docs/screenshots/about.png" alt="Hakkında" width="70%" /><br/><sub><b>Hakkında</b></sub></td>
+  </tr>
+</table>
+
+> Ekran görüntüleri örnek (demo) veriyle alınmıştır.
+
+## Kurulum
+
+[Releases](https://github.com/yunuskayax/USBLens/releases/latest) sayfasından indirin:
+
+- **`UsbLens_x.y.z_x64-setup.exe`** — kurulum dosyası (önerilen)
+- **`UsbLens_x.y.z_x64_en-US.msi`** — kurumsal dağıtım için MSI
+
+Gereksinim: Windows 10/11 ve WebView2 (Windows 11'de hazır gelir). Dosyalar henüz dijital olarak imzalı
+olmadığı için SmartScreen uyarısı çıkabilir: *Ek bilgi → Yine de çalıştır*.
 
 ## Mimari
 
@@ -44,14 +98,14 @@ Windows tarafında veri şu kaynaklardan gelir:
 
 > Tarih özellikleri (`LastArrivalDate` vb.) Windows 8 ve sonrasında vardır. Uygulama Windows 10/11 hedefler.
 
-## Gereksinimler
+## Geliştirme gereksinimleri
 
 - Windows 10/11
 - [Rust](https://rustup.rs) (stable, MSVC araç zinciri) ve Visual Studio C++ Build Tools
 - Node.js 20+
 - WebView2 (Windows 11'de hazır gelir)
 
-## Çalıştırma
+## Geliştirme
 
 ```bash
 npm install

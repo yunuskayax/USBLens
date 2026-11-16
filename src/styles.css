@@ -49,7 +49,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .secondary { color: var(--muted); font-size: 12px; }
 .grow { flex: 1; min-width: 0; }
 
-.app { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); height: 100%; }
+.app { display: flex; flex-direction: column; height: 100%; min-width: 0; }
 
 /* ---------- top bar ---------- */
 .topbar {
@@ -94,7 +94,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .banner { background: var(--accent-soft); color: var(--text); padding: 6px 16px; font-size: 12px; border-bottom: 1px solid var(--line); }
 
 /* ---------- layout ---------- */
-.body { display: flex; min-height: 0; min-width: 0; }
+.body { display: flex; flex: 1; min-height: 0; min-width: 0; }
 .sidebar { width: 212px; flex-shrink: 0; padding: 12px 10px; border-right: 1px solid var(--line); overflow-y: auto; background: var(--bg-2); }
 .side-title { text-transform: uppercase; font-size: 11px; letter-spacing: 0.6px; color: var(--muted); margin: 10px 8px 6px; }
 .side-item { display: flex; align-items: center; gap: 9px; width: 100%; border: 0; background: none; padding: 6px 8px; border-radius: 7px; color: var(--muted); text-align: left; }

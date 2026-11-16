@@ -32,8 +32,9 @@ Contributions from other people are only merged after review by a committer.
 UsbLens reads USB device information **locally** from Windows. It does not send device lists, serial
 numbers, reports or any personal data anywhere.
 
-The only network connection the program makes on its own is the **update check**: it downloads
-`https://usblens.com/latest.json` to compare version numbers. The request contains only
+The only network connection the program makes on its own is the **update check**: it reads the latest
+release information from the GitHub API (`api.github.com/repos/yunuskayax/USBLens/releases/latest`),
+falling back to `https://usblens.com/latest.json`, to compare version numbers. The request contains only
 the standard HTTP headers and the app version (`User-Agent: UsbLens/<version>`). The update check can be
 turned off in *Settings → Updates*. Links (website, update download) open in the user's browser only
 when the user clicks them.
@@ -48,4 +49,4 @@ derlenen dosyalar imzalanır; her imzalama isteği onaylayıcı tarafından elle
 
 **Gizlilik:** UsbLens USB bilgilerini yalnızca bilgisayarda okur; cihaz listesi, seri numarası veya kişisel
 veri hiçbir yere gönderilmez. Kendiliğinden yaptığı tek bağlantı güncelleme denetimidir
-(`usblens.com/latest.json`); *Ayarlar → Güncellemeler* bölümünden kapatılabilir.
+(GitHub Releases, yedek olarak `usblens.com/latest.json`); *Ayarlar → Güncellemeler* bölümünden kapatılabilir.

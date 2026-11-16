@@ -141,16 +141,15 @@ RUSTFLAGS="--cfg usblens_check" cargo check   # win.rs'i Linux/macOS'ta derler (
 
 ## Güncelleme denetimi
 
-Uygulama `https://usblens.com/latest.json` dosyasını okur. Bu dosya repodaki
-[`site/latest.json`](site/latest.json) dosyasıdır ve GitHub Pages ile otomatik yayınlanır.
-Yeni sürüm çıkarınca:
+Uygulama yeni sürümü doğrudan **GitHub Releases** üzerinden kontrol eder: en son yayınlanmış
+Release'in etiketindeki sürüm numarasını (`v0.2.3` gibi) yüklü sürümle karşılaştırır, yeni sürüm
+varsa Release notlarını ve `UsbLens-setup.exe` indirme bağlantısını gösterir.
+Yeni sürüm çıkarmak için `vX.Y.Z` etiketli bir Release yayınlamak yeterli; kurulum dosyaları otomatik eklenir.
 
-1. Release'i yayınla. Kurulum dosyaları otomatik eklenir; ayrıca her zaman en son sürümü gösteren
-   `UsbLens-setup.exe` kopyası da eklenir.
-2. `site/latest.json` içindeki `version`, `date` ve `notes` alanlarını güncelle (`url` sabit kalır).
+GitHub'a ulaşılamazsa yedek olarak `https://usblens.com/latest.json` ([`site/latest.json`](site/latest.json)) okunur.
 
 Güvenlik için uygulama yalnızca `usblens.com`, `yunuskaya.com.tr` ve `github.com` bağlantılarını açar.
-Ayarlar `%APPDATA%\com.yunus.usblens\settings.json` dosyasında saklanır.
+Ayarlar `%APPDATA%\\com.yunus.usblens\\settings.json` dosyasında saklanır.
 
 ## Yönetici yetkisi
 

@@ -67,10 +67,22 @@ ve sürücü harfleriyle listeler. Canlı takılma bildirimi verir ve adli bili�
 [Releases](https://github.com/yunuskayax/USBLens/releases/latest) sayfasından indirin:
 
 - **`UsbLens_x.y.z_x64-setup.exe`** — kurulum dosyası (önerilen)
-- **`UsbLens_x.y.z_x64_en-US.msi`** — kurumsal dağıtım için MSI
+- **`UsbLens_x.y.z_x64_tr-TR.msi`** — kurumsal dağıtım için MSI
 
-Gereksinim: Windows 10/11 ve WebView2 (Windows 11'de hazır gelir). Dosyalar henüz dijital olarak imzalı
-olmadığı için SmartScreen uyarısı çıkabilir: *Ek bilgi → Yine de çalıştır*.
+<p align="center"><img src="docs/screenshots/installer.png" alt="Kurulum sihirbazı" width="500" /></p>
+
+Kurulum yönetici izni istemez (kullanıcı başına kurulur), Türkçe ve İngilizce arayüzlüdür.
+Gereksinim: Windows 10/11 ve WebView2 (Windows 11'de hazır gelir).
+
+İmzasız sürümlerde SmartScreen uyarısı çıkabilir: *Ek bilgi → Yine de çalıştır*.
+
+## Kod imzalama
+
+Windows sürümleri GitHub Actions'ta derlenip imzalanır; ayrıntılar ve kurulum için
+[docs/KOD-IMZALAMA.md](docs/KOD-IMZALAMA.md), politika için [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md).
+
+Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org)
+*(SignPath Foundation programına kabul edildikten sonra geçerlidir).*
 
 ## Mimari
 

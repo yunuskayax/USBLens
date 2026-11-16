@@ -43,6 +43,29 @@
     "longDescription": "UsbLens lists every USB device that is or was connected to a Windows PC, with timestamps, serial numbers, live alerts and forensic reports.",
     "publisher": "Yunus Kaya",
     "copyright": "© 2026 Yunus Kaya",
-    "homepage": "https://yunuskaya.com.tr"
+    "homepage": "https://yunuskaya.com.tr",
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/nsis-header.bmp",
+        "sidebarImage": "installer/nsis-sidebar.bmp",
+        "uninstallerIcon": "icons/icon.ico",
+        "uninstallerHeaderImage": "installer/nsis-header.bmp",
+        "languages": [
+          "Turkish",
+          "English"
+        ],
+        "displayLanguageSelector": false,
+        "installMode": "currentUser",
+        "compression": "lzma"
+      },
+      "wix": {
+        "language": [
+          "tr-TR"
+        ],
+        "bannerPath": "installer/wix-banner.bmp",
+        "dialogImagePath": "installer/wix-dialog.bmp"
+      }
+    }
   }
 }

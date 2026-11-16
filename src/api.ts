@@ -88,11 +88,10 @@ export async function systemNotify(title: string, body: string): Promise<void> {
   }
 }
 
-export const WEBSITE = "https://yunuskaya.com.tr";
-export const PROJECT_SITE = "https://usblens.com";
+export const WEBSITE = "https://usblens.com";
 
 export async function appVersion(): Promise<string> {
-  if (!inTauri) return "0.2.3";
+  if (!inTauri) return "0.2.4";
   const { getVersion } = await import("@tauri-apps/api/app");
   return getVersion();
 }
@@ -155,7 +154,7 @@ export async function saveSettings(settings: Settings): Promise<Settings> {
 
 export async function checkUpdate(): Promise<UpdateInfo> {
   if (!inTauri) {
-    return { current: "0.2.3", latest: "0.2.3", available: false, url: null, notes: null, date: null };
+    return { current: "0.2.4", latest: "0.2.4", available: false, url: null, notes: null, date: null };
   }
   return invoke<UpdateInfo>("check_update");
 }

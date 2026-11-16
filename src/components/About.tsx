@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Lang } from "../types";
 import { dict } from "../i18n";
-import { PROJECT_SITE, WEBSITE, appVersion, openUrl } from "../api";
+import { WEBSITE, appVersion, openUrl } from "../api";
 import { IconExternal, IconX } from "./Icons";
 
 export function AboutDialog({ lang, close }: { lang: Lang; close: () => void }) {
@@ -9,7 +9,7 @@ export function AboutDialog({ lang, close }: { lang: Lang; close: () => void }) 
   const [version, setVersion] = useState("…");
 
   useEffect(() => {
-    appVersion().then(setVersion).catch(() => setVersion("0.2.3"));
+    appVersion().then(setVersion).catch(() => setVersion("—"));
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -34,14 +34,6 @@ export function AboutDialog({ lang, close }: { lang: Lang; close: () => void }) 
 
         <dl className="about-list">
           <div><dt>{t.version}</dt><dd>{version}</dd></div>
-          <div>
-            <dt>{t.projectSite}</dt>
-            <dd>
-              <button className="link" onClick={() => openUrl(PROJECT_SITE)}>
-                usblens.com <IconExternal size={13} />
-              </button>
-            </dd>
-          </div>
           <div><dt>{t.developer}</dt><dd>Yunus Kaya</dd></div>
           <div>
             <dt>{t.website}</dt>
@@ -56,8 +48,8 @@ export function AboutDialog({ lang, close }: { lang: Lang; close: () => void }) 
         </dl>
 
         <div className="modal-actions">
-          <button className="btn primary" onClick={() => openUrl(PROJECT_SITE)}>
-            <IconExternal size={15} /> usblens.com
+          <button className="btn primary" onClick={() => openUrl(WEBSITE)}>
+            <IconExternal size={15} /> {site}
           </button>
           <button className="btn" onClick={close} autoFocus>
             {t.close}

@@ -121,8 +121,6 @@ fn safe_url(u: Option<String>) -> Option<String> {
     u.filter(|u| {
         u.starts_with("https://usblens.com/")
             || u.starts_with("https://www.usblens.com/")
-            || u.starts_with("https://yunuskaya.com.tr/")
-            || u.starts_with("https://www.yunuskaya.com.tr/")
             || u.starts_with("https://github.com/")
     })
 }
@@ -215,9 +213,10 @@ mod tests {
 
     #[test]
     fn filters_urls() {
-        assert!(safe_url(Some("https://yunuskaya.com.tr/x.exe".into())).is_some());
+        assert!(safe_url(Some("https://usblens.com/x.exe".into())).is_some());
         assert!(safe_url(Some("https://usblens.com/".into())).is_some());
-        assert!(safe_url(Some("http://yunuskaya.com.tr/x.exe".into())).is_none());
+        assert!(safe_url(Some("http://usblens.com/x.exe".into())).is_none());
+        assert!(safe_url(Some("https://yunuskaya.com.tr/x.exe".into())).is_none());
         assert!(safe_url(Some("https://evil.example/x.exe".into())).is_none());
     }
 }

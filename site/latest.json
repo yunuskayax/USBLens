@@ -1,7 +1,7 @@
 {
-  "version": "0.2.3",
+  "version": "0.2.4",
   "date": "2026-11-16",
   "url": "https://github.com/yunuskayax/USBLens/releases/latest/download/UsbLens-setup.exe",
   "page": "https://usblens.com",
-  "notes": "Güncelleme denetimi artık doğrudan GitHub Releases üzerinden; usblens.com bağlantıları; daraltılabilir kenar çubuğu."
+  "notes": "Tüm bağlantılar usblens.com'a taşındı, MSI kaldırıldı (yalnızca setup.exe)."
 }

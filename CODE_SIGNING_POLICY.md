@@ -33,7 +33,7 @@ UsbLens reads USB device information **locally** from Windows. It does not send 
 numbers, reports or any personal data anywhere.
 
 The only network connection the program makes on its own is the **update check**: it downloads
-`https://yunuskaya.com.tr/usblens/latest.json` to compare version numbers. The request contains only
+`https://usblens.com/latest.json` to compare version numbers. The request contains only
 the standard HTTP headers and the app version (`User-Agent: UsbLens/<version>`). The update check can be
 turned off in *Settings → Updates*. Links (website, update download) open in the user's browser only
 when the user clicks them.
@@ -48,4 +48,4 @@ derlenen dosyalar imzalanır; her imzalama isteği onaylayıcı tarafından elle
 
 **Gizlilik:** UsbLens USB bilgilerini yalnızca bilgisayarda okur; cihaz listesi, seri numarası veya kişisel
 veri hiçbir yere gönderilmez. Kendiliğinden yaptığı tek bağlantı güncelleme denetimidir
-(`yunuskaya.com.tr/usblens/latest.json`); *Ayarlar → Güncellemeler* bölümünden kapatılabilir.
+(`usblens.com/latest.json`); *Ayarlar → Güncellemeler* bölümünden kapatılabilir.

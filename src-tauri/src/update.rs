@@ -2,15 +2,15 @@
 //!
 //! Manifest (hosted at `MANIFEST_URL`):
 //! ```json
-//! { "version": "0.2.0", "url": "https://yunuskaya.com.tr/usblens/UsbLens_0.2.0_x64-setup.exe",
-//!   "page": "https://yunuskaya.com.tr/usblens", "notes": "…", "date": "2026-12-01" }
+//! { "version": "0.2.2", "url": "https://github.com/yunuskayax/USBLens/releases/latest/download/UsbLens-setup.exe",
+//!   "page": "https://usblens.com", "notes": "…", "date": "2026-11-16" }
 //! ```
 
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-pub const MANIFEST_URL: &str = "https://yunuskaya.com.tr/usblens/latest.json";
+pub const MANIFEST_URL: &str = "https://usblens.com/latest.json";
 
 #[derive(Debug, Deserialize)]
 struct Manifest {
@@ -55,7 +55,9 @@ pub fn is_newer(latest: &str, current: &str) -> bool {
 /// Only allow https links on our own site or GitHub to be opened from the UI.
 fn safe_url(u: Option<String>) -> Option<String> {
     u.filter(|u| {
-        u.starts_with("https://yunuskaya.com.tr/")
+        u.starts_with("https://usblens.com/")
+            || u.starts_with("https://www.usblens.com/")
+            || u.starts_with("https://yunuskaya.com.tr/")
             || u.starts_with("https://www.yunuskaya.com.tr/")
             || u.starts_with("https://github.com/")
     })
@@ -102,6 +104,7 @@ mod tests {
     #[test]
     fn filters_urls() {
         assert!(safe_url(Some("https://yunuskaya.com.tr/x.exe".into())).is_some());
+        assert!(safe_url(Some("https://usblens.com/".into())).is_some());
         assert!(safe_url(Some("http://yunuskaya.com.tr/x.exe".into())).is_none());
         assert!(safe_url(Some("https://evil.example/x.exe".into())).is_none());
     }

@@ -89,6 +89,7 @@ export async function systemNotify(title: string, body: string): Promise<void> {
 }
 
 export const WEBSITE = "https://yunuskaya.com.tr";
+export const PROJECT_SITE = "https://usblens.com";
 
 export async function appVersion(): Promise<string> {
   if (!inTauri) return "0.2.2";

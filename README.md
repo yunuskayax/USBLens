@@ -21,7 +21,7 @@
   <a href="#özellikler">Özellikler</a> ·
   <a href="#ekran-görüntüleri">Ekran görüntüleri</a> ·
   <a href="#geliştirme">Geliştirme</a> ·
-  <a href="https://yunuskaya.com.tr">yunuskaya.com.tr</a>
+  <a href="https://usblens.com"><b>usblens.com</b></a>
 </p>
 
 <p align="center">
@@ -141,13 +141,15 @@ RUSTFLAGS="--cfg usblens_check" cargo check   # win.rs'i Linux/macOS'ta derler (
 
 ## Güncelleme denetimi
 
-Uygulama `https://yunuskaya.com.tr/usblens/latest.json` adresindeki küçük bir JSON dosyasını okur
-(örnek: `site/usblens/latest.json`). Yeni sürüm çıkarınca:
+Uygulama `https://usblens.com/latest.json` dosyasını okur. Bu dosya repodaki
+[`site/latest.json`](site/latest.json) dosyasıdır ve GitHub Pages ile otomatik yayınlanır.
+Yeni sürüm çıkarınca:
 
-1. Kurulum dosyasını `https://yunuskaya.com.tr/usblens/` altına yükleyin.
-2. `latest.json` içindeki `version`, `url`, `notes`, `date` alanlarını güncelleyin.
+1. Release'i yayınla. Kurulum dosyaları otomatik eklenir; ayrıca her zaman en son sürümü gösteren
+   `UsbLens-setup.exe` kopyası da eklenir.
+2. `site/latest.json` içindeki `version`, `date` ve `notes` alanlarını güncelle (`url` sabit kalır).
 
-Güvenlik için yalnızca `https://yunuskaya.com.tr/` ve `https://github.com/` bağlantıları açılır.
+Güvenlik için uygulama yalnızca `usblens.com`, `yunuskaya.com.tr` ve `github.com` bağlantılarını açar.
 Ayarlar `%APPDATA%\com.yunus.usblens\settings.json` dosyasında saklanır.
 
 ## Yönetici yetkisi
@@ -165,7 +167,7 @@ yetkisi ister. Alt çubuktaki "Yönetici olarak yeniden başlat" bağlantısı u
 
 ## Web sitesi
 
-Tanıtım sitesi `site/` klasöründe ve GitHub Pages ile yayınlanır. Alan adı kurulumu: [docs/ALAN-ADI.md](docs/ALAN-ADI.md).
+**https://usblens.com** — tanıtım sitesi `site/` klasöründe ve GitHub Pages ile yayınlanır. Alan adı kurulumu: [docs/ALAN-ADI.md](docs/ALAN-ADI.md).
 
 ## Geliştirici
 

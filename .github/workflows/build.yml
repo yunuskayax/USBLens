@@ -165,6 +165,14 @@ jobs:
           Remove-Item -Recurse -Force out
           Move-Item signed-out out
 
+      - name: Stable file names for direct download links
+        shell: pwsh
+        run: |
+          # releases/latest/download/UsbLens-setup.exe always points to the newest installer.
+          New-Item -ItemType Directory -Force out/stable | Out-Null
+          Copy-Item (Get-ChildItem out/nsis/*-setup.exe | Select-Object -First 1).FullName out/stable/UsbLens-setup.exe
+          Copy-Item (Get-ChildItem out/msi/*.msi | Select-Object -First 1).FullName out/stable/UsbLens.msi
+
       - name: Verify signatures
         if: steps.mode.outputs.mode != 'none'
         shell: pwsh
@@ -197,6 +205,7 @@ jobs:
           files: |
             out/nsis/*.exe
             out/msi/*.msi
+            out/stable/*
 
       - name: Attach installers to existing release
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')

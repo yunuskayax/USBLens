@@ -9,7 +9,7 @@ export function AboutDialog({ lang, close }: { lang: Lang; close: () => void }) 
   const [version, setVersion] = useState("…");
 
   useEffect(() => {
-    appVersion().then(setVersion).catch(() => setVersion("0.2.2"));
+    appVersion().then(setVersion).catch(() => setVersion("0.2.3"));
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

@@ -1,7 +1,7 @@
 {
-  "version": "0.2.2",
+  "version": "0.2.3",
   "date": "2026-11-16",
   "url": "https://github.com/yunuskayax/USBLens/releases/latest/download/UsbLens-setup.exe",
   "page": "https://usblens.com",
-  "notes": "Daraltılabilir kenar çubuğu, modern Türkçe kurulum sihirbazı ve hata düzeltmeleri."
+  "notes": "Güncelleme denetimi artık doğrudan GitHub Releases üzerinden; usblens.com bağlantıları; daraltılabilir kenar çubuğu."
 }

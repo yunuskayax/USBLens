@@ -1,6 +1,6 @@
 [package]
 name = "usblens"
-version = "0.2.2"
+version = "0.2.3"
 description = "Modern, open-source USB device viewer for Windows"
 authors = ["Yunus"]
 license = "MIT"

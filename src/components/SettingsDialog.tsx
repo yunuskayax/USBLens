@@ -6,7 +6,7 @@ import { playUsbSound } from "../sound";
 import { CHANGELOG, ChangelogList, RemoteNotes } from "./Changelog";
 import { IconBell, IconDownload, IconGlobe, IconRefresh, IconWindow, IconX, KindIcon } from "./Icons";
 
-type Section = "general" | "window" | "notifications" | "storage" | "updates";
+export type Section = "general" | "window" | "notifications" | "storage" | "updates";
 
 interface Props {
   settings: Settings;
@@ -14,7 +14,15 @@ interface Props {
   close: () => void;
   updateInfo: UpdateInfo | null;
   setUpdateInfo: (u: UpdateInfo | null) => void;
+  initialSection?: Section;
+  /** Start downloading the update right away (from the "Update" toast). */
+  autoUpdate?: boolean;
 }
+
+type UpdatePhase =
+  | { kind: "idle" }
+  | { kind: "downloading"; done: number; total: number | null }
+  | { kind: "installing" };
 
 function Toggle({ label, desc, checked, onChange, disabled }: {
   label: string;
@@ -53,9 +61,33 @@ function Choice<T extends string>({ value, options, onChange }: {
   );
 }
 
-export function SettingsDialog({ settings: s, update, close, updateInfo, setUpdateInfo }: Props) {
+export function SettingsDialog({ settings: s, update, close, updateInfo, setUpdateInfo, initialSection, autoUpdate }: Props) {
   const t = dict[s.lang];
-  const [section, setSection] = useState<Section>("general");
+  const [section, setSection] = useState<Section>(initialSection ?? "general");
+  const [phase, setPhase] = useState<UpdatePhase>({ kind: "idle" });
+  const busyUpdating = phase.kind !== "idle";
+
+  const startUpdate = async (info: UpdateInfo) => {
+    if (!info.installer) return;
+    setUpdateError(null);
+    setPhase({ kind: "downloading", done: 0, total: info.size });
+    const unlisten = await api.onUpdateProgress((done, total) => setPhase({ kind: "downloading", done, total: total ?? info.size }));
+    try {
+      const path = await api.downloadUpdate(info.installer, info.sha256);
+      setPhase({ kind: "installing" });
+      await api.installUpdate(path);
+    } catch (e) {
+      setPhase({ kind: "idle" });
+      setUpdateError(errorText(s.lang, e));
+    } finally {
+      unlisten();
+    }
+  };
+
+  useEffect(() => {
+    if (autoUpdate && updateInfo?.available && updateInfo.installer) void startUpdate(updateInfo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [checking, setChecking] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [version, setVersion] = useState("");
@@ -195,17 +227,45 @@ export function SettingsDialog({ settings: s, update, close, updateInfo, setUpda
                     <RemoteNotes lang={s.lang} text={updateInfo.notes} />
                   </div>
                 )}
+                {phase.kind === "downloading" && (
+                  <div className="update-progress">
+                    <div className="bar">
+                      <span style={{ width: `${phase.total ? Math.min(100, (phase.done / phase.total) * 100) : 30}%` }} className={phase.total ? "" : "indeterminate"} />
+                    </div>
+                    <span className="setting-desc">
+                      {t.downloadingUpdate} · {(phase.done / 1048576).toFixed(1)}
+                      {phase.total ? ` / ${(phase.total / 1048576).toFixed(1)}` : ""} MB
+                      {phase.total ? ` · ${Math.floor((phase.done / phase.total) * 100)}%` : ""}
+                    </span>
+                  </div>
+                )}
+                {phase.kind === "installing" && <div className="update-status new">{t.installingUpdate}</div>}
                 {updateError && <div className="update-status err">{updateError}</div>}
                 <div className="update-actions">
-                  <button className="btn" onClick={checkNow} disabled={checking}>
+                  {updateInfo?.available && updateInfo.installer ? (
+                    <button className="btn primary" onClick={() => startUpdate(updateInfo)} disabled={busyUpdating}>
+                      <IconDownload size={15} /> {updateError ? t.retry : t.updateNow}
+                    </button>
+                  ) : (
+                    updateInfo?.available &&
+                    updateInfo.url && (
+                      <button className="btn primary" onClick={() => api.openUrl(updateInfo.url!)}>
+                        <IconDownload size={15} /> {t.download}
+                      </button>
+                    )
+                  )}
+                  <button className="btn" onClick={checkNow} disabled={checking || busyUpdating}>
                     <IconRefresh size={15} /> {checking ? t.checking : t.checkNow}
                   </button>
-                  {updateInfo?.available && updateInfo.url && (
-                    <button className="btn primary" onClick={() => api.openUrl(updateInfo.url!)}>
-                      <IconDownload size={15} /> {t.download}
+                  {updateInfo?.available && updateInfo.installer && updateInfo.url && (
+                    <button className="link muted" onClick={() => api.openUrl(updateInfo.url!)} disabled={busyUpdating}>
+                      {t.openInBrowser}
                     </button>
                   )}
                 </div>
+                {updateInfo?.available && updateInfo.installer && phase.kind === "idle" && !updateError && (
+                  <span className="setting-desc">{t.updateHint}</span>
+                )}
               </div>
               <h3 className="settings-sub">{t.releaseNotes}</h3>
               <ChangelogList lang={s.lang} entries={CHANGELOG} current={updateInfo?.current ?? version} />

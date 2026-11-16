@@ -87,6 +87,12 @@ const tr = {
   tagImproved: "İyileştirme",
   tagFixed: "Düzeltme",
   gotIt: "Tamam",
+  updateNow: "Şimdi güncelle",
+  downloadingUpdate: "İndiriliyor",
+  installingUpdate: "Kurulum başlatılıyor… UsbLens kapanıp güncel sürümle yeniden açılacak.",
+  openInBrowser: "Tarayıcıda aç",
+  retry: "Tekrar dene",
+  updateHint: "Güncelleme indirilir, doğrulanır ve kurulur; ayarların korunur.",
   collapseSidebar: "Paneli daralt",
   expandSidebar: "Paneli genişlet",
   showHubs: "Hub'ları göster",
@@ -223,6 +229,12 @@ const en: Dict = {
   tagImproved: "Improved",
   tagFixed: "Fixed",
   gotIt: "Got it",
+  updateNow: "Update now",
+  downloadingUpdate: "Downloading",
+  installingUpdate: "Starting the installer… UsbLens will close and reopen updated.",
+  openInBrowser: "Open in browser",
+  retry: "Try again",
+  updateHint: "The update is downloaded, verified and installed; your settings are kept.",
   collapseSidebar: "Collapse panel",
   expandSidebar: "Expand panel",
   showHubs: "Show hubs",
@@ -309,6 +321,9 @@ export function errorText(lang: Lang, raw: unknown): string {
   if (msg === "NOT_FOUND") return t.notFound;
   if (msg === "WINDOWS_ONLY") return t.windowsOnly;
   if (msg.startsWith("UPDATE_FAILED")) return t.updateFailed;
+  if (msg === "UPDATE_HASH_MISMATCH" || msg === "UPDATE_BAD_FILE")
+    return lang === "tr" ? "İndirilen dosya doğrulanamadı, güvenlik için kurulmadı. Tekrar deneyin." : "The downloaded file could not be verified and was not installed. Please try again.";
+  if (msg === "UPDATE_URL_REJECTED") return lang === "tr" ? "Güncelleme bağlantısı güvenilir değil." : "The update link is not trusted.";
   if (msg.startsWith("VETOED:")) {
     const who = msg.slice(7).trim();
     return who ? `${t.vetoed} (${who})` : t.vetoed;

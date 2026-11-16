@@ -124,6 +124,37 @@ async fn check_update(app: AppHandle) -> Result<update::UpdateInfo, String> {
     blocking(move || update::check(&current)).await
 }
 
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UpdateProgress {
+    downloaded: u64,
+    total: Option<u64>,
+}
+
+#[tauri::command]
+async fn download_update(app: AppHandle, url: String, sha256: Option<String>) -> Result<String, String> {
+    let current = app.package_info().version.to_string();
+    blocking(move || {
+        update::download(&current, &url, sha256.as_deref(), |downloaded, total| {
+            let _ = app.emit("update-progress", UpdateProgress { downloaded, total });
+        })
+        .map(|p| p.to_string_lossy().into_owned())
+    })
+    .await
+}
+
+#[tauri::command]
+fn install_update(app: AppHandle, path: String) -> Result<(), String> {
+    update::launch_installer(&path)?;
+    // The installer also closes us; exiting first avoids a "file in use" prompt.
+    let handle = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(600));
+        handle.exit(0);
+    });
+    Ok(())
+}
+
 /// Push settings that live outside the web UI: window flags, autostart, tray labels.
 fn apply_settings(app: &AppHandle, s: &Settings, previous: Option<&Settings>) {
     if let Some(w) = app.get_webview_window("main") {
@@ -314,6 +345,8 @@ pub fn run() {
             get_settings,
             set_settings,
             check_update,
+            download_update,
+            install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running UsbLens");

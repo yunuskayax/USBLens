@@ -316,3 +316,11 @@ button.admin:hover { text-decoration: underline; }
 .whatsnew-hero h2 { margin: 0; font-size: 18px; }
 .whatsnew-hero p { margin: 2px 0 0 !important; white-space: normal !important; }
 .whatsnew-body { overflow-y: auto; margin: 6px -6px 16px; padding: 0 6px; }
+
+/* ---------- in-app updater ---------- */
+.update-progress { display: flex; flex-direction: column; gap: 6px; }
+.update-progress .bar { height: 8px; border-radius: 8px; background: var(--line); overflow: hidden; }
+.update-progress .bar span { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.2s ease; }
+.update-progress .bar span.indeterminate { animation: indet 1.2s ease-in-out infinite; }
+@keyframes indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(330%); } }
+.update-actions { align-items: center; flex-wrap: wrap; }

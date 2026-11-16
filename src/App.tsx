@@ -9,7 +9,7 @@ import { DetailPanel } from "./components/DetailPanel";
 import { Timeline } from "./components/Timeline";
 import { ConfirmDialog, Toasts, type ConfirmState, type Toast } from "./components/Overlays";
 import { AboutDialog } from "./components/About";
-import { SettingsDialog } from "./components/SettingsDialog";
+import { SettingsDialog, type Section } from "./components/SettingsDialog";
 import { CHANGELOG, WhatsNewDialog, versionGt } from "./components/Changelog";
 import { playUsbSound } from "./sound";
 import { IconClock, IconDownload, IconGlobe, IconInfo, IconMoon, IconRefresh, IconSearch, IconSettings, IconShield, IconSun, IconTable } from "./components/Icons";
@@ -83,6 +83,11 @@ export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInit, setSettingsInit] = useState<{ section?: Section; autoUpdate?: boolean }>({});
+  const openSettings = useCallback((init: { section?: Section; autoUpdate?: boolean } = {}) => {
+    setSettingsInit(init);
+    setSettingsOpen(true);
+  }, []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [whatsNew, setWhatsNew] = useState<{ entries: ChangeEntry[]; current: string } | null>(null);
@@ -151,8 +156,12 @@ export default function App() {
               toast({
                 kind: "info",
                 title: `${l.updateAvailable}: ${info.latest}`,
-                body: info.notes ?? undefined,
-                action: info.url ? { label: l.download, onClick: () => api.openUrl(info.url!) } : undefined,
+                body: info.installer ? l.updateHint : undefined,
+                action: info.installer
+                  ? { label: l.updateNow, onClick: () => openSettings({ section: "updates", autoUpdate: true }) }
+                  : info.url
+                    ? { label: l.download, onClick: () => api.openUrl(info.url!) }
+                    : undefined,
               });
             }
           } catch {
@@ -161,7 +170,7 @@ export default function App() {
         }, 3000);
       })
       .catch(() => {});
-    const unlisten = api.onOpenSettings(() => setSettingsOpen(true));
+    const unlisten = api.onOpenSettings(() => openSettings());
     return () => {
       clearTimeout(timer);
       unlisten.then((fn) => fn());
@@ -349,7 +358,7 @@ export default function App() {
           <button className="icon-btn lang" title="Dil / Language" onClick={() => setLang(lang === "tr" ? "en" : "tr")}>
             <IconGlobe size={15} /> {lang.toUpperCase()}
           </button>
-          <button className="icon-btn badge-wrap" title={t.settings} onClick={() => setSettingsOpen(true)}>
+          <button className="icon-btn badge-wrap" title={t.settings} onClick={() => openSettings()}>
             <IconSettings />
             {updateInfo?.available && <span className="badge-dot" />}
           </button>
@@ -404,11 +413,11 @@ export default function App() {
         </span>
         <span className="grow" />
         {updateInfo?.available && (
-          <button className="link" onClick={() => setSettingsOpen(true)}>
+          <button className="link" onClick={() => openSettings({ section: "updates" })}>
             {t.updateAvailable}: {updateInfo.latest}
           </button>
         )}
-        <button className="link muted" onClick={() => setSettingsOpen(true)}>
+        <button className="link muted" onClick={() => openSettings()}>
           {t.settings}
         </button>
         <button className="link muted" onClick={() => setAboutOpen(true)}>
@@ -434,7 +443,15 @@ export default function App() {
 
       <Toasts toasts={toasts} dismiss={dismiss} />
       {settingsOpen && (
-        <SettingsDialog settings={settings} update={updateSettings} close={closeSettings} updateInfo={updateInfo} setUpdateInfo={setUpdateInfo} />
+        <SettingsDialog
+          settings={settings}
+          update={updateSettings}
+          close={closeSettings}
+          updateInfo={updateInfo}
+          setUpdateInfo={setUpdateInfo}
+          initialSection={settingsInit.section}
+          autoUpdate={settingsInit.autoUpdate}
+        />
       )}
       {aboutOpen && (
         <AboutDialog

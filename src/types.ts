@@ -81,6 +81,9 @@ export interface UpdateInfo {
   url: string | null;
   notes: string | null;
   date: string | null;
+  installer: string | null;
+  sha256: string | null;
+  size: number | null;
 }
 
 export type ChangeType = "new" | "improved" | "fixed";

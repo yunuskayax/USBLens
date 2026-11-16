@@ -1,6 +1,6 @@
 [package]
 name = "usblens"
-version = "0.2.4"
+version = "0.2.5"
 description = "Modern, open-source USB device viewer for Windows"
 authors = ["Yunus"]
 license = "MIT"
@@ -21,7 +21,7 @@ tauri-plugin-notification = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
-ureq = { version = "3", features = ["json"] }
+ureq = { version = "3", features = ["json", "platform-verifier"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

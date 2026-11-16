@@ -91,7 +91,7 @@ export async function systemNotify(title: string, body: string): Promise<void> {
 export const WEBSITE = "https://usblens.com";
 
 export async function appVersion(): Promise<string> {
-  if (!inTauri) return "0.2.4";
+  if (!inTauri) return "0.2.5";
   const { getVersion } = await import("@tauri-apps/api/app");
   return getVersion();
 }
@@ -153,9 +153,22 @@ export async function saveSettings(settings: Settings): Promise<Settings> {
   return invoke<Settings>("set_settings", { settings });
 }
 
+// Browser preview only: `?mockUpdate` simulates an available update to test the UI.
+const mockUpdate = typeof location !== "undefined" && new URLSearchParams(location.search).has("mockUpdate");
+let mockProgress: ((d: number, t: number | null) => void) | null = null;
+
 export async function checkUpdate(): Promise<UpdateInfo> {
+  if (!inTauri && mockUpdate) {
+    return {
+      current: "0.2.4", latest: "0.2.5", available: true, date: "2026-11-20",
+      url: "https://github.com/yunuskayax/USBLens/releases/latest",
+      installer: "https://github.com/yunuskayax/USBLens/releases/download/v0.2.5/UsbLens-setup.exe",
+      sha256: null, size: 2_100_000,
+      notes: "### Yenilikler\n- **Yeni:** Uygulama içinden tek tıkla güncelleme\n- **Düzeltme:** Küçük hata düzeltmeleri\n\n### What's new\n- **New:** One-click in-app updates\n- **Fixed:** Small bug fixes",
+    };
+  }
   if (!inTauri) {
-    return { current: "0.2.4", latest: "0.2.4", available: false, url: null, notes: null, date: null };
+    return { current: "0.2.5", latest: "0.2.5", available: false, url: null, notes: null, date: null, installer: null, sha256: null, size: null };
   }
   return invoke<UpdateInfo>("check_update");
 }
@@ -164,4 +177,33 @@ export async function onOpenSettings(handler: () => void): Promise<() => void> {
   if (!inTauri) return () => {};
   const { listen } = await import("@tauri-apps/api/event");
   return listen("open-settings", () => handler());
+}
+
+/** Download the new installer (progress via onUpdateProgress). Returns the local file path. */
+export async function downloadUpdate(url: string, sha256: string | null): Promise<string> {
+  if (!inTauri && mockUpdate) {
+    for (let d = 0; d <= 2_100_000; d += 300_000) {
+      mockProgress?.(d, 2_100_000);
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return "mock";
+  }
+  if (!inTauri) throw "WINDOWS_ONLY";
+  return invoke<string>("download_update", { url, sha256 });
+}
+
+/** Run the installer in passive mode; the app closes and restarts updated. */
+export async function installUpdate(path: string): Promise<void> {
+  if (!inTauri && mockUpdate) return new Promise(() => {}); // stays on "installing"
+  if (!inTauri) throw "WINDOWS_ONLY";
+  return invoke("install_update", { path });
+}
+
+export async function onUpdateProgress(handler: (downloaded: number, total: number | null) => void): Promise<() => void> {
+  if (!inTauri) {
+    mockProgress = handler;
+    return () => (mockProgress = null);
+  }
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen<{ downloaded: number; total: number | null }>("update-progress", (e) => handler(e.payload.downloaded, e.payload.total));
 }

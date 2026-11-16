@@ -9,9 +9,12 @@
 //!   "page": "https://usblens.com", "notes": "…", "date": "2026-11-16" }
 //! ```
 
+use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 pub const MANIFEST_URL: &str = "https://usblens.com/latest.json";
 pub const GITHUB_LATEST_URL: &str = "https://api.github.com/repos/yunuskayax/USBLens/releases/latest";
@@ -21,6 +24,10 @@ const RELEASES_PAGE: &str = "https://github.com/yunuskayax/USBLens/releases/late
 struct GithubAsset {
     name: String,
     browser_download_url: String,
+    #[serde(default)]
+    size: u64,
+    /// "sha256:<hex>" — provided by the GitHub API for release assets.
+    digest: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -42,16 +49,18 @@ impl GithubRelease {
             .find_map(extract_version)
     }
 
+    fn installer(&self) -> Option<&GithubAsset> {
+        let pick = |pred: &dyn Fn(&str) -> bool| self.assets.iter().find(|a| pred(&a.name.to_ascii_lowercase()));
+        pick(&|n| n == "usblens-setup.exe").or_else(|| pick(&|n| n.ends_with("-setup.exe")))
+    }
+
     fn installer_url(&self) -> Option<String> {
-        let pick = |pred: &dyn Fn(&str) -> bool| {
+        self.installer().map(|a| a.browser_download_url.clone()).or_else(|| {
             self.assets
                 .iter()
-                .find(|a| pred(&a.name.to_ascii_lowercase()))
+                .find(|a| a.name.to_ascii_lowercase().ends_with(".msi"))
                 .map(|a| a.browser_download_url.clone())
-        };
-        pick(&|n| n == "usblens-setup.exe")
-            .or_else(|| pick(&|n| n.ends_with("-setup.exe")))
-            .or_else(|| pick(&|n| n.ends_with(".msi")))
+        })
     }
 }
 
@@ -91,9 +100,14 @@ pub struct UpdateInfo {
     pub current: String,
     pub latest: String,
     pub available: bool,
+    /// Page / file to open in the browser (fallback).
     pub url: Option<String>,
     pub notes: Option<String>,
     pub date: Option<String>,
+    /// Direct link to the NSIS installer for the in-app updater.
+    pub installer: Option<String>,
+    pub sha256: Option<String>,
+    pub size: Option<u64>,
 }
 
 /// "v1.2.3-beta" -> [1, 2, 3]
@@ -125,8 +139,16 @@ fn safe_url(u: Option<String>) -> Option<String> {
     })
 }
 
+/// Use the operating system's certificate store (works behind corporate / school TLS proxies).
+fn tls() -> ureq::tls::TlsConfig {
+    ureq::tls::TlsConfig::builder()
+        .root_certs(ureq::tls::RootCerts::PlatformVerifier)
+        .build()
+}
+
 fn agent(current: &str) -> ureq::Agent {
     ureq::Agent::config_builder()
+        .tls_config(tls())
         .timeout_global(Some(Duration::from_secs(10)))
         .user_agent(format!("UsbLens/{current}"))
         .build()
@@ -143,9 +165,19 @@ fn from_github(agent: &ureq::Agent, current: &str) -> Result<UpdateInfo, String>
         .read_json()
         .map_err(|e| e.to_string())?;
     let latest = release.version().ok_or("latest release has no version number")?;
+    let asset = release.installer();
+    let installer = asset.map(|a| a.browser_download_url.clone()).filter(|u| is_installer_url(u));
+    let sha256 = asset
+        .and_then(|a| a.digest.as_deref())
+        .and_then(|d| d.strip_prefix("sha256:"))
+        .map(str::to_ascii_lowercase);
+    let size = asset.map(|a| a.size).filter(|s| *s > 0);
     Ok(UpdateInfo {
         current: current.to_string(),
         available: is_newer(&latest, current),
+        installer,
+        sha256,
+        size,
         url: safe_url(release.installer_url()).or_else(|| Some(RELEASES_PAGE.to_string())),
         notes: short_notes(release.body),
         date: release.published_at.map(|d| d.chars().take(10).collect()),
@@ -161,14 +193,119 @@ fn from_manifest(agent: &ureq::Agent, current: &str) -> Result<UpdateInfo, Strin
         .body_mut()
         .read_json()
         .map_err(|e| e.to_string())?;
+    let installer = manifest.url.clone().filter(|u| is_installer_url(u));
     Ok(UpdateInfo {
         current: current.to_string(),
         available: is_newer(&manifest.version, current),
         latest: manifest.version,
+        installer,
+        sha256: None,
+        size: None,
         url: safe_url(manifest.url).or_else(|| safe_url(manifest.page)),
         notes: manifest.notes,
         date: manifest.date,
     })
+}
+
+// ---------------------------------------------------------------- in-app updater
+
+/// Only installers attached to this repository's releases can be downloaded and run.
+pub fn is_installer_url(u: &str) -> bool {
+    let l = u.to_ascii_lowercase();
+    l.starts_with("https://github.com/yunuskayax/usblens/releases/") && l.ends_with(".exe")
+}
+
+const UPDATE_FILE_PREFIX: &str = "UsbLens-update-";
+
+/// Download the installer to %TEMP%, reporting progress, and verify its SHA-256 when known.
+pub fn download<F: FnMut(u64, Option<u64>)>(
+    current: &str,
+    url: &str,
+    sha256: Option<&str>,
+    mut progress: F,
+) -> Result<PathBuf, String> {
+    if !is_installer_url(url) {
+        return Err("UPDATE_URL_REJECTED".into());
+    }
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .tls_config(tls())
+        .timeout_connect(Some(Duration::from_secs(15)))
+        .timeout_per_read(Some(Duration::from_secs(30)))
+        .user_agent(format!("UsbLens/{current}"))
+        .build()
+        .into();
+    let mut resp = agent.get(url).call().map_err(|e| format!("UPDATE_FAILED:{e}"))?;
+    let total = resp.body().content_length();
+    let mut reader = resp.body_mut().with_config().limit(300 * 1024 * 1024).reader();
+
+    let path = std::env::temp_dir().join(format!("{UPDATE_FILE_PREFIX}{}.exe", std::process::id()));
+    let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+    let mut hasher = Sha256::new();
+    let mut buf = vec![0u8; 64 * 1024];
+    let mut done: u64 = 0;
+    let mut last_report = 0u64;
+    loop {
+        let n = reader.read(&mut buf).map_err(|e| format!("UPDATE_FAILED:{e}"))?;
+        if n == 0 {
+            break;
+        }
+        file.write_all(&buf[..n]).map_err(|e| e.to_string())?;
+        hasher.update(&buf[..n]);
+        done += n as u64;
+        if done - last_report >= 256 * 1024 {
+            last_report = done;
+            progress(done, total);
+        }
+    }
+    file.flush().map_err(|e| e.to_string())?;
+    drop(file);
+    progress(done, total);
+
+    let fail = |msg: &str| {
+        let _ = std::fs::remove_file(&path);
+        Err(msg.to_string())
+    };
+    if done < 1024 {
+        return fail("UPDATE_BAD_FILE");
+    }
+    if let Some(expected) = sha256 {
+        let got: String = hasher.finalize().iter().map(|b| format!("{b:02x}")).collect();
+        if !got.eq_ignore_ascii_case(expected) {
+            return fail("UPDATE_HASH_MISMATCH");
+        }
+    }
+    // Must be a Windows executable.
+    let mut head = [0u8; 2];
+    std::fs::File::open(&path)
+        .and_then(|mut f| f.read_exact(&mut head))
+        .map_err(|e| e.to_string())?;
+    if &head != b"MZ" {
+        return fail("UPDATE_BAD_FILE");
+    }
+    Ok(path)
+}
+
+/// Start the downloaded installer in passive mode: progress bar only, closes the running app,
+/// keeps settings and shortcuts (/UPDATE) and starts UsbLens again when done (/R).
+pub fn launch_installer(path: &str) -> Result<(), String> {
+    let p = PathBuf::from(path);
+    let name = p.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+    let in_temp = p.parent().map(|d| d == std::env::temp_dir().as_path()).unwrap_or(false);
+    if !in_temp || !name.starts_with(UPDATE_FILE_PREFIX) || !p.is_file() {
+        return Err("UPDATE_BAD_FILE".into());
+    }
+    #[cfg(windows)]
+    {
+        std::process::Command::new(&p)
+            .args(["/P", "/R", "/UPDATE"])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        Err("WINDOWS_ONLY".into())
+    }
 }
 
 pub fn check(current: &str) -> Result<UpdateInfo, String> {
@@ -212,11 +349,46 @@ mod tests {
     }
 
     #[test]
+    fn only_repo_installers_are_downloadable() {
+        assert!(is_installer_url("https://github.com/yunuskayax/USBLens/releases/download/v0.2.5/UsbLens-setup.exe"));
+        assert!(is_installer_url("https://github.com/yunuskayax/USBLens/releases/latest/download/UsbLens-setup.exe"));
+        assert!(!is_installer_url("https://github.com/someone/else/releases/download/v1/x.exe"));
+        assert!(!is_installer_url("http://github.com/yunuskayax/USBLens/releases/download/v1/x.exe"));
+        assert!(!is_installer_url("https://github.com/yunuskayax/USBLens/releases/download/v1/x.msi"));
+        assert!(launch_installer("/etc/passwd").is_err());
+    }
+
+    #[test]
     fn filters_urls() {
         assert!(safe_url(Some("https://usblens.com/x.exe".into())).is_some());
         assert!(safe_url(Some("https://usblens.com/".into())).is_some());
         assert!(safe_url(Some("http://usblens.com/x.exe".into())).is_none());
         assert!(safe_url(Some("https://yunuskaya.com.tr/x.exe".into())).is_none());
         assert!(safe_url(Some("https://evil.example/x.exe".into())).is_none());
+    }
+}
+
+#[cfg(test)]
+mod net_tests {
+    /// `USBLENS_NET_URL=... USBLENS_NET_SHA=... cargo test net_download -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn net_download() {
+        let url = std::env::var("USBLENS_NET_URL").unwrap();
+        let sha = std::env::var("USBLENS_NET_SHA").ok();
+        let mut calls = 0;
+        let p = super::download("0.0.0", &url, sha.as_deref(), |d, t| { calls += 1; if calls % 4 == 0 { println!("{d}/{t:?}"); } }).unwrap();
+        println!("ok {} {} bytes", p.display(), std::fs::metadata(&p).unwrap().len());
+        assert!(super::download("0.0.0", &url, Some("00"), |_, _| {}).unwrap_err().contains("HASH"));
+    }
+
+    /// `cargo test net_check -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn net_check() {
+        let info = super::check("0.2.2").unwrap();
+        println!("{info:#?}");
+        assert!(info.available);
+        assert!(info.installer.is_some() && info.sha256.is_some());
     }
 }

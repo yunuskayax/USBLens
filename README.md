@@ -141,8 +141,13 @@ RUSTFLAGS="--cfg usblens_check" cargo check   # win.rs'i Linux/macOS'ta derler (
 ## Güncelleme denetimi
 
 Uygulama yeni sürümü doğrudan **GitHub Releases** üzerinden kontrol eder: en son yayınlanmış
-Release'in etiketindeki sürüm numarasını (`v0.2.3` gibi) yüklü sürümle karşılaştırır, yeni sürüm
-varsa Release notlarını ve `UsbLens-setup.exe` indirme bağlantısını gösterir.
+Release'in etiketindeki sürüm numarasını (`v0.2.5` gibi) yüklü sürümle karşılaştırır, yeni sürüm
+varsa Release notlarını gösterir.
+
+**Uygulama içi güncelleme:** "Şimdi güncelle" düğmesi `UsbLens-setup.exe` dosyasını indirir
+(yalnızca bu reponun Release'lerinden), GitHub'ın verdiği **SHA-256** özetiyle doğrular ve kurulumu
+pasif modda (`/P /R /UPDATE`) başlatır: uygulama kapanır, ayarlar ve kısayollar korunarak güncellenir
+ve yeniden açılır. Bağlantılar Windows sertifika deposuyla doğrulanır (kurum/okul ağlarında da çalışır).
 ### Yeni sürüm yayınlama
 
 1. [`src/changelog.json`](src/changelog.json) dosyasına yeni sürümün maddelerini ekle

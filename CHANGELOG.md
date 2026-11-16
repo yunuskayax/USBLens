@@ -2,6 +2,22 @@
 
 Bu dosya `src/changelog.json` dosyasından üretilir (`node scripts/changelog.mjs md`).
 
+## 0.2.5 — 2026-11-16
+
+- **Yeni:** Uygulama içinden tek tıkla güncelleme: indirir, SHA-256 ile doğrular, kurar ve yeniden açılır
+- **Yeni:** Güncelleme indirilirken ilerleme çubuğu
+- **İyileştirme:** Güncelleme ayarları ve kısayollar korunarak kurulur
+- **İyileştirme:** Kurum ve okul ağlarında güvenli bağlantı için Windows sertifika deposu kullanılır
+
+<details><summary>English</summary>
+
+- **New:** One-click in-app updates: downloads, verifies (SHA-256), installs and restarts
+- **New:** Progress bar while the update downloads
+- **Improved:** Updates keep your settings and shortcuts
+- **Improved:** Uses the Windows certificate store, so updates also work behind corporate / school network proxies
+
+</details>
+
 ## 0.2.4 — 2026-11-16
 
 - **Yeni:** Sürüm notları: Ayarlar → Güncellemeler bölümünde tüm değişiklikler listelenir

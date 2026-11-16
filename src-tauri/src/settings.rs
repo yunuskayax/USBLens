@@ -13,6 +13,7 @@ pub struct Settings {
     pub lang: String,
     pub theme: String,
     pub hide_hubs: bool,
+    pub sidebar_collapsed: bool,
     // Window
     pub always_on_top: bool,
     pub close_to_tray: bool,
@@ -39,6 +40,7 @@ impl Default for Settings {
             lang: "tr".into(),
             theme: "dark".into(),
             hide_hubs: true,
+            sidebar_collapsed: false,
             always_on_top: false,
             close_to_tray: true,
             start_with_windows: false,

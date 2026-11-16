@@ -57,6 +57,7 @@ export interface Settings {
   lang: Lang;
   theme: "dark" | "light";
   hideHubs: boolean;
+  sidebarCollapsed: boolean;
   alwaysOnTop: boolean;
   closeToTray: boolean;
   startWithWindows: boolean;

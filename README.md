@@ -41,7 +41,7 @@ ve sürücü harfleriyle listeler. Canlı takılma bildirimi verir ve adli bili�
 - **Dışa aktarma:** HTML rapor (yazdır → PDF), CSV (Excel uyumlu, Türkçe karakterli) ve JSON. Rapora bilgisayar adı, kullanıcı, zaman damgası ve **SHA-256** özeti eklenir.
 - **Ayarlar:** Her zaman üstte, kapatınca sistem tepsisine küçült, Windows ile başlat, küçültülmüş başlat; depolama aygıtı takılınca uygulamayı öne getir / sürücüyü Gezgin'de aç; açılışta güncelleme denetimi.
 - Sistem tepsisi simgesi (Göster / Ayarlar / Çıkış), tek örnek çalışma.
-- Koyu / açık tema, Türkçe / İngilizce arayüz, `Ctrl+F` arama, `F5` yenile.
+- Daraltılabilir kenar çubuğu (`Ctrl+B`), koyu / açık tema, Türkçe / İngilizce arayüz, `Ctrl+F` arama, `F5` yenile.
 
 ## Ekran görüntüleri
 
@@ -162,6 +162,10 @@ yetkisi ister. Alt çubuktaki "Yönetici olarak yeniden başlat" bağlantısı u
 - [ ] Uzak bilgisayar / çevrimdışı kayıt defteri (`SYSTEM` hive) inceleme
 - [ ] Beyaz liste: yalnızca izinli seri numaralarına izin ver, diğerlerinde uyar
 - [ ] Doğrudan PDF dışa aktarma, imzalı rapor
+
+## Web sitesi
+
+Tanıtım sitesi `site/` klasöründe ve GitHub Pages ile yayınlanır. Alan adı kurulumu: [docs/ALAN-ADI.md](docs/ALAN-ADI.md).
 
 ## Geliştirici
 

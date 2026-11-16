@@ -191,6 +191,9 @@ export default function App() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
         e.preventDefault();
         searchRef.current?.focus();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        updateSettings({ sidebarCollapsed: !settingsRef.current.sidebarCollapsed });
       } else if (e.key === "F5") {
         e.preventDefault();
         refresh();
@@ -201,7 +204,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [refresh, confirm, aboutOpen, settingsOpen]);
+  }, [refresh, confirm, aboutOpen, settingsOpen, updateSettings]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLocaleLowerCase(lang);
@@ -351,6 +354,8 @@ export default function App() {
           toggleKind={toggleKind}
           hideHubs={hideHubs}
           setHideHubs={setHideHubs}
+          collapsed={settings.sidebarCollapsed}
+          setCollapsed={(v) => updateSettings({ sidebarCollapsed: v })}
         />
 
         <main className="content">

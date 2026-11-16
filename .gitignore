@@ -5,3 +5,4 @@ src-tauri/target-wincheck/
 src-tauri/gen/
 *.log
 .DS_Store
+site/assets/

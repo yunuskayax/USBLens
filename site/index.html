@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>UsbLens — Modern, açık kaynak USB cihaz görüntüleyici</title>
+<meta name="description" content="UsbLens, Windows bilgisayara bağlı olan ve geçmişte bağlanmış tüm USB cihazlarını seri numarası, VID:PID ve tarihleriyle gösteren ücretsiz, açık kaynak bir araçtır." />
+<meta property="og:title" content="UsbLens — USB cihaz görüntüleyici" />
+<meta property="og:description" content="Bağlı ve geçmişte bağlanmış tüm USB cihazları, canlı bildirim ve adli bilişim raporu. Ücretsiz ve açık kaynak." />
+<meta property="og:image" content="assets/screens/main-dark.png" />
+<meta name="theme-color" content="#0d1017" />
+<link rel="icon" href="assets/logo.png" />
+<style>
+  :root {
+    --bg: #0b0e15; --bg2: #11151f; --panel: #161b27; --line: #252c3b; --text: #e8ebf2; --muted: #9098ab;
+    --a1: #3b6cf6; --a2: #7c4dee; --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  .wrap { width: min(1120px, 92vw); margin: 0 auto; }
+  .grad { background: linear-gradient(135deg, #5b8cff, #a77bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(14px); background: rgba(11,14,21,.72); border-bottom: 1px solid rgba(255,255,255,.06); }
+  nav .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; }
+  .links a { color: var(--muted); text-decoration: none; }
+  .links a:hover { color: var(--text); }
+  .lang { border: 1px solid var(--line); background: none; color: var(--muted); border-radius: 8px; padding: 5px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  .lang:hover { color: var(--text); border-color: var(--a1); }
+
+  /* hero */
+  .hero { position: relative; padding: 88px 0 40px; text-align: center; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; inset: -40% -10% auto; height: 700px; background: radial-gradient(closest-side, rgba(91,124,250,.28), transparent 70%), radial-gradient(closest-side at 70% 40%, rgba(124,77,238,.22), transparent 70%); pointer-events: none; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--bg2); border-radius: 99px; padding: 5px 14px; font-size: 13px; color: var(--muted); }
+  .pill b { color: var(--ok); font-weight: 600; }
+  h1 { font-size: clamp(34px, 5.4vw, 60px); line-height: 1.08; letter-spacing: -0.02em; margin: 22px auto 18px; max-width: 900px; }
+  .lead { font-size: clamp(17px, 2vw, 20px); color: var(--muted); max-width: 720px; margin: 0 auto 32px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 13px 22px; border-radius: 12px; text-decoration: none; font-weight: 600; border: 1px solid var(--line); background: var(--panel); transition: transform .15s, border-color .15s; }
+  .btn:hover { transform: translateY(-1px); border-color: var(--a1); }
+  .btn.primary { background: linear-gradient(135deg, var(--a1), var(--a2)); border-color: transparent; color: #fff; box-shadow: 0 10px 30px rgba(91,108,250,.35); }
+  .btn small { font-weight: 400; opacity: .8; }
+  .meta { margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .shot { margin: 56px auto 0; max-width: 1040px; border-radius: 14px; border: 1px solid var(--line); overflow: hidden; box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03); background: var(--bg2); }
+  .shot .bar { display: flex; gap: 7px; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+  .shot .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2a3142; }
+  .shot img { display: block; width: 100%; }
+
+  /* sections */
+  section { padding: 88px 0; }
+  .eyebrow { color: #8ea7ff; font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  h2 { font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -0.015em; line-height: 1.15; margin: 10px 0 14px; }
+  .sub { color: var(--muted); max-width: 680px; margin: 0 0 44px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: linear-gradient(180deg, var(--panel), var(--bg2)); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  .card .ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 16px; background: rgba(91,124,250,.14); color: #8ea7ff; }
+  .card h3 { margin: 0 0 6px; font-size: 18px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .tabs button { border: 1px solid var(--line); background: var(--bg2); color: var(--muted); padding: 8px 16px; border-radius: 10px; font: inherit; font-size: 14px; cursor: pointer; }
+  .tabs button.on { color: var(--text); border-color: var(--a1); background: rgba(91,124,250,.12); }
+  .gallery .shot { margin: 0; max-width: none; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .checks li { display: flex; gap: 12px; color: var(--muted); }
+  .checks li::before { content: "✓"; color: var(--ok); font-weight: 700; }
+  .checks b { color: var(--text); font-weight: 600; }
+
+  details { border: 1px solid var(--line); background: var(--bg2); border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::after { content: "+"; color: var(--muted); font-size: 20px; line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details p { color: var(--muted); margin: 12px 0 0; }
+
+  .final { text-align: center; border: 1px solid var(--line); border-radius: 24px; padding: 64px 24px; background: radial-gradient(closest-side at 50% 0%, rgba(91,124,250,.22), transparent), var(--bg2); }
+  footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; gap: 16px 28px; flex-wrap: wrap; align-items: center; }
+  footer a { color: var(--muted); }
+  footer .sign { flex-basis: 100%; font-size: 12px; opacity: .8; }
+
+  @media (max-width: 860px) {
+    .links a:not(.keep) { display: none; }
+    .grid { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    section { padding: 64px 0; }
+  }
+  /* language switch */
+  [data-en] { }
+  html[lang="en"] [data-tr-only] { display: none; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#"><img src="assets/logo.png" alt="" />UsbLens</a>
+    <div class="links">
+      <a href="#features" data-i="navFeatures">Özellikler</a>
+      <a href="#screens" data-i="navScreens">Ekran görüntüleri</a>
+      <a href="#faq" data-i="navFaq">SSS</a>
+      <a class="keep" href="https://github.com/yunuskayax/USBLens">GitHub</a>
+    </div>
+    <button class="lang" id="lang" aria-label="Dil / Language">EN</button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="pill"><b>●</b> <span data-i="pill">Ücretsiz ve açık kaynak · Windows 10/11</span></span>
+    <h1 data-i="h1html">Bilgisayarınıza takılan <span class="grad">her USB cihazı</span>, tek bakışta.</h1>
+    <p class="lead" data-i="lead">UsbLens, şu an bağlı olan ve geçmişte bağlanmış tüm USB cihazlarını seri numarası, VID:PID, sürücü harfi ve takılma tarihleriyle gösterir. Canlı bildirim verir, adli bilişim raporu üretir.</p>
+    <div class="cta">
+      <a class="btn primary dl" href="https://github.com/yunuskayax/USBLens/releases/latest">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm0 13 7.5 1.1v-7H3v5.9Zm8.4 1.2L21 21v-8.4h-9.6v7.1Zm0-15.4v7.2H21V3l-9.6 1.3Z"/></svg>
+        <span data-i="download">Windows için indir</span> <small class="dl-ver"></small>
+      </a>
+      <a class="btn" href="https://github.com/yunuskayax/USBLens">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>
+        <span data-i="source">Kaynak kod</span>
+      </a>
+    </div>
+    <p class="meta" data-i="meta">Kurulum yönetici izni istemez · Türkçe ve İngilizce arayüz · MIT lisansı</p>
+    <div class="shot"><div class="bar"><i></i><i></i><i></i></div><img src="assets/screens/main-dark.png" alt="UsbLens" /></div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="eyebrow" data-i="eyeFeatures">Özellikler</div>
+    <h2 data-i="h2Features">USB geçmişini anlamak için ihtiyacınız olan her şey</h2>
+    <p class="sub" data-i="subFeatures">Windows'un sakladığı cihaz kayıtlarını okunabilir hale getirir; BT destek, sistem yönetimi ve adli bilişim için tasarlandı.</p>
+    <div class="grid">
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3 data-i="f1t">Bağlantı geçmişi</h3><p data-i="f1">Şu an takılı olmayan cihazlar dahil; ilk kurulum, son takılma ve son çıkarılma tarihleri.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></div><h3 data-i="f2t">Canlı bildirim</h3><p data-i="f2">Bir USB takılınca anında uyarı: Windows bildirimi, sesli uyarı veya cihaz adını sesli okuma.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M14 3v6h6M8 14h8M8 18h5"/></svg></div><h3 data-i="f3t">Adli bilişim raporu</h3><p data-i="f3">HTML, CSV ve JSON dışa aktarma; bilgisayar adı, zaman damgası ve SHA-256 özetiyle.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v9"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/></svg></div><h3 data-i="f4t">Cihaz kontrolü</h3><p data-i="f4">Etkinleştir, devre dışı bırak, güvenli çıkar veya eski cihaz kayıtlarını kaldır.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="7" rx="1"/><rect x="5" y="9" width="14" height="13" rx="2"/></svg></div><h3 data-i="f5t">Depolama tetikleyicileri</h3><p data-i="f5">USB bellek takılınca uygulamayı öne getir veya sürücüyü Dosya Gezgini'nde otomatik aç.</p></div>
+      <div class="card"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/></svg></div><h3 data-i="f6t">Gizliliğe saygılı</h3><p data-i="f6">Tüm veriler bilgisayarınızda kalır. Hesap, reklam veya izleme yok; kod herkese açık.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="screens" style="padding-top:0">
+  <div class="wrap gallery">
+    <div class="eyebrow" data-i="eyeScreens">Ekran görüntüleri</div>
+    <h2 data-i="h2Screens">Modern, sade ve hızlı</h2>
+    <div class="tabs" role="tablist">
+      <button class="on" data-shot="details.png" data-i="t1">Cihaz ayrıntıları</button>
+      <button data-shot="timeline-light.png" data-i="t2">Zaman çizelgesi</button>
+      <button data-shot="settings.png" data-i="t3">Ayarlar</button>
+      <button data-shot="main-en.png">English</button>
+    </div>
+    <div class="shot"><div class="bar"><i></i><i></i><i></i></div><img id="gallery" src="assets/screens/details.png" alt="" /></div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow" data-i="eyeWhy">Neden UsbLens?</div>
+      <h2 data-i="h2Why">Klasik araçların gücü, bugünün arayüzüyle</h2>
+      <p class="sub" style="margin-bottom:0" data-i="subWhy">USBDeview gibi klasik araçlardan ilham aldı; arama, filtre, zaman çizelgesi ve raporlamayla günlük kullanımı kolaylaştırır.</p>
+    </div>
+    <ul class="checks">
+      <li data-i="w1html"><span><b>Anlık arama ve filtre</b> — ad, seri no, VID:PID veya sürücü harfiyle</span></li>
+      <li data-i="w2html"><span><b>Zaman çizelgesi</b> — hangi gün hangi cihaz takıldı, tek ekranda</span></li>
+      <li data-i="w3html"><span><b>Sistem tepsisinde çalışır</b> — arka planda USB'leri izlemeye devam eder</span></li>
+      <li data-i="w4html"><span><b>Koyu ve açık tema</b>, Türkçe ve İngilizce arayüz</span></li>
+      <li data-i="w5html"><span><b>Açık kaynak (MIT)</b> — kodu inceleyin, katkıda bulunun</span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="faq" style="padding-top:0">
+  <div class="wrap" style="max-width:820px">
+    <div class="eyebrow" data-i="eyeFaq">SSS</div>
+    <h2 data-i="h2Faq">Sık sorulan sorular</h2>
+    <details><summary data-i="q1">Ücretli mi?</summary><p data-i="a1">Hayır. UsbLens tamamen ücretsiz ve MIT lisanslı açık kaynak bir projedir.</p></details>
+    <details><summary data-i="q2">Kurulumda "Windows kişisel bilgisayarınızı korudu" uyarısı çıkıyor.</summary><p data-i="a2">Yeni ve henüz yaygınlaşmamış uygulamalarda Microsoft SmartScreen bu uyarıyı gösterir. "Ek bilgi → Yine de çalıştır" ile devam edebilirsiniz. Kurulum dosyaları GitHub Actions'ta açık kaynak koddan derlenir.</p></details>
+    <details><summary data-i="q3">Yönetici yetkisi gerekiyor mu?</summary><p data-i="a3">Kurulum ve cihaz listesi için gerekmez. Cihazı devre dışı bırakma ve kaldırma işlemleri için uygulama içinden "Yönetici olarak yeniden başlat" seçeneği vardır.</p></details>
+    <details><summary data-i="q4">Verilerim bir yere gönderiliyor mu?</summary><p data-i="a4">Hayır. Cihaz bilgileri yalnızca bilgisayarınızda okunur. Uygulamanın kendiliğinden yaptığı tek bağlantı güncelleme denetimidir ve ayarlardan kapatılabilir.</p></details>
+    <details><summary data-i="q5">Linux veya macOS desteği var mı?</summary><p data-i="a5">Şu an yalnızca Windows 10/11 destekleniyor. Ubuntu desteği yol haritasında.</p></details>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap final">
+    <h2 data-i="h2Final">USB geçmişinizi şimdi görün</h2>
+    <p class="sub" style="margin:0 auto 28px" data-i="subFinal">Birkaç saniyede kurulur, kayıt veya hesap gerektirmez.</p>
+    <a class="btn primary dl" href="https://github.com/yunuskayax/USBLens/releases/latest"><span data-i="download">Windows için indir</span> <small class="dl-ver"></small></a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="year">2026</span> Yunus Kaya</span>
+    <a href="https://yunuskaya.com.tr">yunuskaya.com.tr</a>
+    <a href="https://github.com/yunuskayax/USBLens">GitHub</a>
+    <a href="https://github.com/yunuskayax/USBLens/releases" data-i="releases">Sürümler</a>
+    <a href="https://github.com/yunuskayax/USBLens/blob/main/CODE_SIGNING_POLICY.md#privacy-policy" data-i="privacy">Gizlilik</a>
+    <a href="https://github.com/yunuskayax/USBLens/blob/main/LICENSE" data-i="license">MIT lisansı</a>
+    <span class="sign">Free code signing provided by <a href="https://signpath.io">SignPath.io</a>, certificate by <a href="https://signpath.org">SignPath Foundation</a> <span data-i="signNote">(programa kabul edildikten sonra geçerlidir)</span>.</span>
+  </div>
+</footer>
+
+<script>
+  const REPO = "yunuskayax/USBLens";
+  const en = {
+    navFeatures: "Features", navScreens: "Screenshots", navFaq: "FAQ",
+    pill: "Free and open source · Windows 10/11",
+    h1html: 'Every <span class="grad">USB device</span> ever plugged into your PC, at a glance.',
+    lead: "UsbLens shows every USB device that is or was connected to your PC, with serial numbers, VID:PID, drive letters and connection dates. Live alerts and forensic reports included.",
+    download: "Download for Windows", source: "Source code",
+    meta: "No admin rights needed to install · Turkish & English UI · MIT license",
+    eyeFeatures: "Features", h2Features: "Everything you need to understand USB history",
+    subFeatures: "Turns the device records Windows keeps into something readable — built for IT support, sysadmins and digital forensics.",
+    f1t: "Connection history", f1: "Including devices that are no longer plugged in: first install, last plugged and last unplugged times.",
+    f2t: "Live alerts", f2: "Instant notice when a USB device is plugged in: Windows notification, chime, or the device name read aloud.",
+    f3t: "Forensic reports", f3: "Export to HTML, CSV and JSON with computer name, timestamp and a SHA-256 digest.",
+    f4t: "Device control", f4: "Enable, disable, safely remove, or clean up old device entries.",
+    f5t: "Storage triggers", f5: "Bring the app to front or open the new drive in File Explorer when a USB drive is plugged in.",
+    f6t: "Privacy first", f6: "All data stays on your PC. No account, ads or tracking — and the code is public.",
+    eyeScreens: "Screenshots", h2Screens: "Modern, clean and fast", t1: "Device details", t2: "Timeline", t3: "Settings",
+    eyeWhy: "Why UsbLens?", h2Why: "The power of classic tools, with a modern interface",
+    subWhy: "Inspired by classic tools like USBDeview, it adds search, filters, a timeline and reports for everyday use.",
+    w1html: "<span><b>Instant search & filters</b> — by name, serial, VID:PID or drive letter</span>",
+    w2html: "<span><b>Timeline</b> — which device was plugged in on which day</span>",
+    w3html: "<span><b>Runs in the tray</b> — keeps monitoring USB in the background</span>",
+    w4html: "<span><b>Dark & light themes</b>, Turkish and English UI</span>",
+    w5html: "<span><b>Open source (MIT)</b> — read the code, contribute</span>",
+    eyeFaq: "FAQ", h2Faq: "Frequently asked questions",
+    q1: "Is it free?", a1: "Yes. UsbLens is completely free and open source under the MIT license.",
+    q2: 'Windows shows "Windows protected your PC" when installing.', a2: 'Microsoft SmartScreen shows this for new apps that are not yet widely downloaded. Click "More info → Run anyway". Installers are built from the open source code on GitHub Actions.',
+    q3: "Does it need administrator rights?", a3: 'Not for installing or listing devices. For disabling or uninstalling a device, use "Restart as administrator" inside the app.',
+    q4: "Is my data sent anywhere?", a4: "No. Device information is read only on your PC. The only connection the app makes on its own is the update check, which can be turned off in Settings.",
+    q5: "Linux or macOS?", a5: "Windows 10/11 only for now. Ubuntu support is on the roadmap.",
+    h2Final: "See your USB history now", subFinal: "Installs in seconds. No sign-up, no account.",
+    releases: "Releases", privacy: "Privacy", license: "MIT license", signNote: "(once accepted into the program)",
+  };
+  const tr = {};
+  document.querySelectorAll("[data-i]").forEach((el) => {
+    const k = el.dataset.i;
+    tr[k] = k.endsWith("html") ? el.innerHTML : el.textContent;
+  });
+  const titles = { tr: document.title, en: "UsbLens — Modern, open-source USB device viewer" };
+
+  function setLang(lang) {
+    const d = lang === "en" ? en : tr;
+    document.querySelectorAll("[data-i]").forEach((el) => {
+      const k = el.dataset.i;
+      if (d[k] == null) return;
+      if (k.endsWith("html")) el.innerHTML = d[k]; else el.textContent = d[k];
+    });
+    document.documentElement.lang = lang;
+    document.title = titles[lang];
+    document.getElementById("lang").textContent = lang === "en" ? "TR" : "EN";
+    try { localStorage.setItem("usblens.site.lang", lang); } catch {}
+  }
+  let lang = "tr";
+  try { lang = localStorage.getItem("usblens.site.lang") || (navigator.language.startsWith("tr") ? "tr" : "en"); } catch {}
+  if (lang === "en") setLang("en");
+  document.getElementById("lang").onclick = () => setLang(document.documentElement.lang === "en" ? "tr" : "en");
+
+  // Gallery tabs
+  document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
+    document.getElementById("gallery").src = "assets/screens/" + b.dataset.shot;
+  });
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // Point the download buttons straight at the latest installer.
+  fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((rel) => {
+      const asset = (rel.assets || []).find((a) => /-setup\.exe$/i.test(a.name)) || (rel.assets || []).find((a) => /\.msi$/i.test(a.name));
+      if (!asset) return;
+      const mb = (asset.size / 1048576).toFixed(1);
+      document.querySelectorAll("a.dl").forEach((a) => (a.href = asset.browser_download_url));
+      document.querySelectorAll(".dl-ver").forEach((s) => (s.textContent = `${rel.tag_name} · ${mb} MB`));
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>

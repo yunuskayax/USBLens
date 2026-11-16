@@ -95,7 +95,30 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 /* ---------- layout ---------- */
 .body { display: flex; flex: 1; min-height: 0; min-width: 0; }
-.sidebar { width: 212px; flex-shrink: 0; padding: 12px 10px; border-right: 1px solid var(--line); overflow-y: auto; background: var(--bg-2); }
+.sidebar { width: 212px; flex-shrink: 0; padding: 8px 10px 12px; border-right: 1px solid var(--line); overflow-y: auto; overflow-x: hidden; background: var(--bg-2); transition: width 0.18s ease, padding 0.18s ease; }
+.side-toggle { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; color: var(--muted); padding: 6px 8px; border-radius: 7px; font-size: 12px; white-space: nowrap; }
+.side-toggle:hover { background: var(--panel); color: var(--text); }
+.side-toggle svg { transition: transform 0.18s ease; flex-shrink: 0; }
+.side-icon { display: inline-grid; place-items: center; width: 18px; flex-shrink: 0; }
+.tone-on { color: var(--on); }
+.tone-off { color: var(--off); }
+.tone-warn { color: var(--warn); }
+.tone-all { color: var(--accent); }
+.side-rule { display: block; height: 1px; background: var(--line); margin: 4px 6px; }
+.sidebar .label, .sidebar .side-title { white-space: nowrap; }
+/* collapsed: icon rail */
+.sidebar.collapsed { width: 60px; padding: 8px 8px 12px; }
+.sidebar.collapsed .side-toggle { justify-content: center; padding: 8px 0; }
+.sidebar.collapsed .side-toggle svg { transform: rotate(180deg); }
+.sidebar.collapsed .side-title { margin: 8px 0 6px; }
+.sidebar.collapsed .side-item { position: relative; justify-content: center; padding: 9px 0; }
+.sidebar.collapsed .side-item .label { display: none; }
+.sidebar.collapsed .side-item .count {
+  position: absolute; top: 1px; right: 1px; min-width: 16px; height: 16px; padding: 0 4px; line-height: 16px;
+  font-size: 10px; text-align: center; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px;
+}
+.sidebar.collapsed .side-item.active .count { background: var(--accent); color: #fff; border-color: transparent; }
+.sidebar.collapsed .hub-toggle { margin-top: 10px; }
 .side-title { text-transform: uppercase; font-size: 11px; letter-spacing: 0.6px; color: var(--muted); margin: 10px 8px 6px; }
 .side-item { display: flex; align-items: center; gap: 9px; width: 100%; border: 0; background: none; padding: 6px 8px; border-radius: 7px; color: var(--muted); text-align: left; }
 .side-item:hover { background: var(--panel); color: var(--text); }

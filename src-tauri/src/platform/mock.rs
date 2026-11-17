@@ -38,6 +38,7 @@ fn dev(
         last_arrival: Some(arrival.into()),
         last_removal: removal.map(Into::into),
         security: Default::default(),
+        children: Vec::new(),
     }
 }
 

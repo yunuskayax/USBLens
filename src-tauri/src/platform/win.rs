@@ -369,6 +369,7 @@ unsafe fn build_device(
         last_arrival: p.filetime(&DEVPKEY_Device_LastArrivalDate),
         last_removal: p.filetime(&DEVPKEY_Device_LastRemovalDate),
         security: Default::default(),
+        children: Vec::new(),
         instance_id,
         name,
         description,

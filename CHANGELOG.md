@@ -2,6 +2,24 @@
 
 Bu dosya `src/changelog.json` dosyasından üretilir (`node scripts/changelog.mjs md`).
 
+## 0.3.1 — 2026-11-17
+
+- **Düzeltme:** Her cihaz bir kez listelenir: USB bellek, disk kaydı ve bileşik cihaz arayüzleri tek satırda birleştirildi
+- **Yeni:** Ayrıntı panelinde cihazın alt bileşenleri (klavye, disk, ses arayüzü…) listelenir
+- **Düzeltme:** Uygulama içi güncellemede "sunucuya ulaşılamadı" hatası: indirme artık üç farklı yolla denenir (Windows sertifika deposu, yerleşik sertifikalar, Windows indiricisi)
+- **İyileştirme:** Güncelleme başarısız olursa hatanın ayrıntısı gösterilir
+- **Yeni:** Ayarlar → Genel: alt bileşenleri ayrı satırlarda gösterme seçeneği (ham görünüm)
+
+<details><summary>English</summary>
+
+- **Fixed:** Each device is listed once: USB drive, disk entry and composite interfaces are merged into one row
+- **New:** Device details list the device's sub-components (keyboard, disk, audio interface…)
+- **Fixed:** In-app update "could not reach the server" error: the download now tries three methods (Windows certificate store, built-in roots, Windows downloader)
+- **Improved:** If an update fails, the error details are shown
+- **New:** Settings → General: option to show sub-components as separate rows (raw view)
+
+</details>
+
 ## 0.3.0 — 2026-11-17
 
 - **Yeni:** BadUSB uyarısı: hem klavye hem depolama gibi davranan cihazlar ve klavye taklidi yapabilen programlanabilir kartlar (Arduino, Digispark, Pico…) işaretlenir

@@ -217,7 +217,12 @@ pub fn is_installer_url(u: &str) -> bool {
 
 const UPDATE_FILE_PREFIX: &str = "UsbLens-update-";
 
-/// Download the installer to %TEMP%, reporting progress, and verify its SHA-256 when known.
+/// Download the installer to %TEMP%, reporting progress, and verify it (SHA-256, PE header).
+///
+/// Some networks break one way of connecting but not another (antivirus HTTPS scanning,
+/// certificate revocation checks, system proxies). So three methods are tried in order:
+/// 1. HTTPS with the Windows certificate store, 2. HTTPS with the built-in Mozilla roots,
+/// 3. Windows' own downloader via PowerShell (uses the system proxy settings).
 pub fn download<F: FnMut(u64, Option<u64>)>(
     current: &str,
     url: &str,
@@ -227,30 +232,66 @@ pub fn download<F: FnMut(u64, Option<u64>)>(
     if !is_installer_url(url) {
         return Err("UPDATE_URL_REJECTED".into());
     }
-    let agent: ureq::Agent = ureq::Agent::config_builder()
-        .tls_config(tls())
+    let path = std::env::temp_dir().join(format!("{UPDATE_FILE_PREFIX}{}.exe", std::process::id()));
+    let mut errors: Vec<String> = Vec::new();
+
+    let mut ok = false;
+    for (label, tls_config) in [("windows-tls", Some(tls())), ("builtin-tls", None)] {
+        match fetch_with_ureq(current, url, &path, tls_config, &mut progress) {
+            Ok(()) => {
+                ok = true;
+                break;
+            }
+            Err(e) => errors.push(format!("{label}: {e}")),
+        }
+    }
+    if !ok {
+        progress(0, None); // indeterminate while Windows downloads
+        match fetch_with_windows(url, &path) {
+            Ok(()) => ok = true,
+            Err(e) => errors.push(format!("windows: {e}")),
+        }
+    }
+    if !ok {
+        let _ = std::fs::remove_file(&path);
+        return Err(format!("UPDATE_FAILED:{}", errors.join(" | ")));
+    }
+    verify_download(&path, sha256)?;
+    if let Ok(m) = std::fs::metadata(&path) {
+        progress(m.len(), Some(m.len()));
+    }
+    Ok(path)
+}
+
+fn fetch_with_ureq<F: FnMut(u64, Option<u64>)>(
+    current: &str,
+    url: &str,
+    path: &PathBuf,
+    tls_config: Option<ureq::tls::TlsConfig>,
+    progress: &mut F,
+) -> Result<(), String> {
+    let mut cfg = ureq::Agent::config_builder()
         .timeout_connect(Some(Duration::from_secs(15)))
         .timeout_per_read(Some(Duration::from_secs(30)))
-        .user_agent(format!("UsbLens/{current}"))
-        .build()
-        .into();
-    let mut resp = agent.get(url).call().map_err(|e| format!("UPDATE_FAILED:{e}"))?;
+        .user_agent(format!("UsbLens/{current}"));
+    if let Some(t) = tls_config {
+        cfg = cfg.tls_config(t);
+    }
+    let agent: ureq::Agent = cfg.build().into();
+    let mut resp = agent.get(url).call().map_err(|e| e.to_string())?;
     let total = resp.body().content_length();
     let mut reader = resp.body_mut().with_config().limit(300 * 1024 * 1024).reader();
 
-    let path = std::env::temp_dir().join(format!("{UPDATE_FILE_PREFIX}{}.exe", std::process::id()));
-    let mut file = std::fs::File::create(&path).map_err(|e| e.to_string())?;
-    let mut hasher = Sha256::new();
+    let mut file = std::fs::File::create(path).map_err(|e| e.to_string())?;
     let mut buf = vec![0u8; 64 * 1024];
     let mut done: u64 = 0;
     let mut last_report = 0u64;
     loop {
-        let n = reader.read(&mut buf).map_err(|e| format!("UPDATE_FAILED:{e}"))?;
+        let n = reader.read(&mut buf).map_err(|e| e.to_string())?;
         if n == 0 {
             break;
         }
         file.write_all(&buf[..n]).map_err(|e| e.to_string())?;
-        hasher.update(&buf[..n]);
         done += n as u64;
         if done - last_report >= 256 * 1024 {
             last_report = done;
@@ -258,31 +299,65 @@ pub fn download<F: FnMut(u64, Option<u64>)>(
         }
     }
     file.flush().map_err(|e| e.to_string())?;
-    drop(file);
-    progress(done, total);
+    if let Some(t) = total {
+        if done != t {
+            return Err(format!("incomplete download ({done}/{t} bytes)"));
+        }
+    }
+    Ok(())
+}
 
+/// Last resort: Windows' own HTTP stack (Schannel, system proxy, enterprise certificates).
+fn fetch_with_windows(url: &str, path: &std::path::Path) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        // The URL was validated by is_installer_url; still refuse anything that could break quoting.
+        let target = path.to_string_lossy();
+        if url.contains(['\'', '"', '`']) || target.contains(['\'', '"', '`']) {
+            return Err("unsafe characters".into());
+        }
+        let script = format!(
+            "$ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue'; \
+             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+             Invoke-WebRequest -UseBasicParsing -Uri '{url}' -OutFile '{target}'"
+        );
+        let out = std::process::Command::new("powershell.exe")
+            .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &script])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()
+            .map_err(|e| e.to_string())?;
+        if out.status.success() {
+            Ok(())
+        } else {
+            let msg = String::from_utf8_lossy(&out.stderr);
+            Err(msg.lines().find(|l| !l.trim().is_empty()).unwrap_or("powershell failed").trim().to_string())
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (url, path);
+        Err("not available on this OS".into())
+    }
+}
+
+fn verify_download(path: &PathBuf, sha256: Option<&str>) -> Result<(), String> {
     let fail = |msg: &str| {
-        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_file(path);
         Err(msg.to_string())
     };
-    if done < 1024 {
+    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+    if bytes.len() < 1024 || &bytes[..2] != b"MZ" {
         return fail("UPDATE_BAD_FILE");
     }
     if let Some(expected) = sha256 {
-        let got: String = hasher.finalize().iter().map(|b| format!("{b:02x}")).collect();
+        let got: String = Sha256::digest(&bytes).iter().map(|b| format!("{b:02x}")).collect();
         if !got.eq_ignore_ascii_case(expected) {
             return fail("UPDATE_HASH_MISMATCH");
         }
     }
-    // Must be a Windows executable.
-    let mut head = [0u8; 2];
-    std::fs::File::open(&path)
-        .and_then(|mut f| f.read_exact(&mut head))
-        .map_err(|e| e.to_string())?;
-    if &head != b"MZ" {
-        return fail("UPDATE_BAD_FILE");
-    }
-    Ok(path)
+    Ok(())
 }
 
 /// Start the downloaded installer in passive mode: progress bar only, closes the running app,
@@ -309,12 +384,26 @@ pub fn launch_installer(path: &str) -> Result<(), String> {
 }
 
 pub fn check(current: &str) -> Result<UpdateInfo, String> {
-    let agent = agent(current);
-    match from_github(&agent, current) {
-        Ok(info) => Ok(info),
-        Err(github_err) => from_manifest(&agent, current)
-            .map_err(|site_err| format!("UPDATE_FAILED:github: {github_err}; site: {site_err}")),
+    let platform = agent(current);
+    let builtin: ureq::Agent = ureq::Agent::config_builder()
+        .timeout_global(Some(Duration::from_secs(10)))
+        .user_agent(format!("UsbLens/{current}"))
+        .build()
+        .into();
+    let mut errors = Vec::new();
+    for (label, a) in [("github", &platform), ("github/builtin-tls", &builtin)] {
+        match from_github(a, current) {
+            Ok(info) => return Ok(info),
+            Err(e) => errors.push(format!("{label}: {e}")),
+        }
     }
+    for (label, a) in [("site", &platform), ("site/builtin-tls", &builtin)] {
+        match from_manifest(a, current) {
+            Ok(info) => return Ok(info),
+            Err(e) => errors.push(format!("{label}: {e}")),
+        }
+    }
+    Err(format!("UPDATE_FAILED:{}", errors.join(" | ")))
 }
 
 #[cfg(test)]

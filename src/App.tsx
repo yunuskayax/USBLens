@@ -185,7 +185,7 @@ export default function App() {
   // Security settings change the analysis done in Rust: re-read the list after they are saved.
   const securityKey = JSON.stringify([
     settings.securityAlerts, settings.newKeyboardAlert, settings.allowlistEnabled,
-    settings.allowlistAction, settings.allowlistScope, settings.allowlist,
+    settings.allowlistAction, settings.allowlistScope, settings.allowlist, settings.showInterfaces,
   ]);
   const firstSecurityKey = useRef(true);
   useEffect(() => {

@@ -108,7 +108,7 @@ export async function systemNotify(title: string, body: string): Promise<void> {
 export const WEBSITE = "https://usblens.com";
 
 export async function appVersion(): Promise<string> {
-  if (!inTauri) return "0.3.0";
+  if (!inTauri) return "0.3.1";
   const { getVersion } = await import("@tauri-apps/api/app");
   return getVersion();
 }
@@ -128,6 +128,7 @@ export const defaultSettings: Settings = {
   theme: "dark",
   hideHubs: true,
   sidebarCollapsed: false,
+  showInterfaces: false,
   alwaysOnTop: false,
   closeToTray: true,
   startWithWindows: false,
@@ -184,15 +185,15 @@ let mockProgress: ((d: number, t: number | null) => void) | null = null;
 export async function checkUpdate(): Promise<UpdateInfo> {
   if (!inTauri && mockUpdate) {
     return {
-      current: "0.3.0", latest: "0.3.1", available: true, date: "2026-11-20",
+      current: "0.3.1", latest: "0.3.2", available: true, date: "2026-11-20",
       url: "https://github.com/yunuskayax/USBLens/releases/latest",
-      installer: "https://github.com/yunuskayax/USBLens/releases/download/v0.3.1/UsbLens-setup.exe",
+      installer: "https://github.com/yunuskayax/USBLens/releases/download/v0.3.2/UsbLens-setup.exe",
       sha256: null, size: 2_100_000,
       notes: "### Yenilikler\n- **Yeni:** Uygulama içinden tek tıkla güncelleme\n- **Düzeltme:** Küçük hata düzeltmeleri\n\n### What's new\n- **New:** One-click in-app updates\n- **Fixed:** Small bug fixes",
     };
   }
   if (!inTauri) {
-    return { current: "0.3.0", latest: "0.3.0", available: false, url: null, notes: null, date: null, installer: null, sha256: null, size: null };
+    return { current: "0.3.1", latest: "0.3.1", available: false, url: null, notes: null, date: null, installer: null, sha256: null, size: null };
   }
   return invoke<UpdateInfo>("check_update");
 }

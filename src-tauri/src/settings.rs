@@ -14,6 +14,8 @@ pub struct Settings {
     pub theme: String,
     pub hide_hubs: bool,
     pub sidebar_collapsed: bool,
+    /// Show interfaces and disk entries as separate rows (raw view).
+    pub show_interfaces: bool,
     // Window
     pub always_on_top: bool,
     pub close_to_tray: bool,
@@ -67,6 +69,7 @@ impl Default for Settings {
             theme: "dark".into(),
             hide_hubs: true,
             sidebar_collapsed: false,
+            show_interfaces: false,
             always_on_top: false,
             close_to_tray: true,
             start_with_windows: false,

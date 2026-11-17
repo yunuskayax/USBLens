@@ -49,6 +49,108 @@ pub struct UsbDevice {
     /// Filled by `security::annotate`.
     #[serde(default)]
     pub security: Security,
+    /// Interfaces / disk entries of this physical device, folded in by `group_children`.
+    #[serde(default)]
+    pub children: Vec<ChildDevice>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChildDevice {
+    pub instance_id: String,
+    pub name: String,
+    pub kind: DeviceKind,
+    pub class_name: String,
+    pub service: String,
+}
+
+/// Generic names Windows gives composite / mass-storage parents (en + tr).
+fn is_generic_name(n: &str) -> bool {
+    let l = n.to_lowercase();
+    ["usb composite device", "usb bileşik aygıt", "usb mass storage device", "usb yığın depolama aygıtı", "usb input device", "usb giriş aygıtı"]
+        .iter()
+        .any(|g| l == *g)
+}
+
+/// Fold interfaces (`&MI_xx`) and disk entries (`USBSTOR\…`) into the physical USB device they
+/// belong to, so every device shows up once. Needs `security.root_id` (see `security::annotate`).
+pub fn group_children(devices: Vec<UsbDevice>) -> Vec<UsbDevice> {
+    use std::collections::HashMap;
+    let index: HashMap<String, usize> = devices
+        .iter()
+        .enumerate()
+        .map(|(i, d)| (d.instance_id.to_ascii_uppercase(), i))
+        .collect();
+
+    let mut is_child = vec![false; devices.len()];
+    let mut children: HashMap<usize, Vec<usize>> = HashMap::new();
+    for (i, d) in devices.iter().enumerate() {
+        let root = d.security.root_id.to_ascii_uppercase();
+        if root.is_empty() || root == d.instance_id.to_ascii_uppercase() {
+            continue;
+        }
+        if let Some(&r) = index.get(&root) {
+            is_child[i] = true;
+            children.entry(r).or_default().push(i);
+        }
+    }
+
+    const PRIORITY: [DeviceKind; 9] = [
+        DeviceKind::Storage,
+        DeviceKind::Phone,
+        DeviceKind::Video,
+        DeviceKind::Audio,
+        DeviceKind::Printer,
+        DeviceKind::Network,
+        DeviceKind::Serial,
+        DeviceKind::Bluetooth,
+        DeviceKind::Hid,
+    ];
+
+    let mut out = Vec::with_capacity(devices.len());
+    for (i, d) in devices.iter().enumerate() {
+        if is_child[i] {
+            continue;
+        }
+        let mut root = d.clone();
+        if let Some(kids) = children.get(&i) {
+            let kids: Vec<&UsbDevice> = kids.iter().map(|&k| &devices[k]).collect();
+            // A composite parent is "Other"; take the most telling child type.
+            if root.kind == DeviceKind::Other {
+                if let Some(k) = PRIORITY.iter().find(|p| kids.iter().any(|c| c.kind == **p)) {
+                    root.kind = *k;
+                }
+            }
+            // A disk entry carries the full product name ("Kingston Keypad200 USB Device").
+            if let Some(disk) = kids.iter().find(|c| c.instance_id.to_ascii_uppercase().starts_with("USBSTOR\\")) {
+                if is_generic_name(&root.name) {
+                    root.name = disk.name.clone();
+                } else if is_generic_name(&root.description) || root.description.is_empty() {
+                    root.description = disk.name.clone();
+                }
+            }
+            for c in &kids {
+                for l in &c.drive_letters {
+                    if !root.drive_letters.contains(l) {
+                        root.drive_letters.push(l.clone());
+                    }
+                }
+            }
+            root.drive_letters.sort();
+            root.children = kids
+                .iter()
+                .map(|c| ChildDevice {
+                    instance_id: c.instance_id.clone(),
+                    name: c.name.clone(),
+                    kind: c.kind,
+                    class_name: c.class_name.clone(),
+                    service: c.service.clone(),
+                })
+                .collect();
+        }
+        out.push(root);
+    }
+    out
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Default)]

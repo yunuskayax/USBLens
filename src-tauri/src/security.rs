@@ -198,6 +198,7 @@ mod tests {
             last_arrival: None,
             last_removal: None,
             security: Default::default(),
+            children: vec![],
         }
     }
 
@@ -283,6 +284,31 @@ mod tests {
         list[0].serial_number = Some("ANOTHER".into());
         annotate(&mut list, &HashSet::new(), &s, now());
         assert_eq!(list[0].security.allowed, Some(true));
+    }
+
+    #[test]
+    fn groups_interfaces_and_disk_into_one_row() {
+        let mut list = vec![
+            dev("USB\\VID_2009&PID_7100\\2009710066015468AEA4", DeviceKind::Storage, None, None),
+            dev("USBSTOR\\DISK&VEN_KINGSTON&PROD_KEYPAD200\\2009710066015468AEA4&0", DeviceKind::Storage, Some("USB\\VID_2009&PID_7100\\2009710066015468AEA4"), None),
+            dev("USB\\VID_1234&PID_5678\\ABC", DeviceKind::Other, None, None),
+            dev("USB\\VID_1234&PID_5678&MI_00\\7&1&0&0", DeviceKind::Hid, Some("USB\\VID_1234&PID_5678\\ABC"), None),
+            dev("USB\\VID_1234&PID_5678&MI_01\\7&1&0&1", DeviceKind::Audio, Some("USB\\VID_1234&PID_5678\\ABC"), None),
+        ];
+        list[0].name = "Keypad200".into();
+        list[0].description = "USB Mass Storage Device".into();
+        list[1].name = "Kingston Keypad200 USB Device".into();
+        list[1].drive_letters = vec!["H:".into()];
+        annotate(&mut list, &HashSet::new(), &Settings::default(), now());
+        let grouped = crate::model::group_children(list);
+        assert_eq!(grouped.len(), 2);
+        assert_eq!(grouped[0].name, "Keypad200");
+        assert_eq!(grouped[0].description, "Kingston Keypad200 USB Device");
+        assert_eq!(grouped[0].drive_letters, vec!["H:".to_string()]);
+        assert_eq!(grouped[0].children.len(), 1);
+        // Composite parent takes the most telling child type (audio over HID).
+        assert_eq!(grouped[1].kind, DeviceKind::Audio);
+        assert_eq!(grouped[1].children.len(), 2);
     }
 
     #[test]

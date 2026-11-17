@@ -49,7 +49,7 @@ where
 fn analyzed_devices(settings: &Settings) -> Result<Vec<UsbDevice>, String> {
     let mut list = platform::list_devices()?;
     security::annotate(&mut list, &platform::keyboard_parent_ids(), settings, chrono::Utc::now());
-    Ok(list)
+    Ok(if settings.show_interfaces { list } else { model::group_children(list) })
 }
 
 #[tauri::command]

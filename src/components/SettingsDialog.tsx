@@ -71,6 +71,7 @@ export function SettingsDialog({ devices, settings: s, update, close, updateInfo
   const startUpdate = async (info: UpdateInfo) => {
     if (!info.installer) return;
     setUpdateError(null);
+    setErrorDetail(null);
     setPhase({ kind: "downloading", done: 0, total: info.size });
     const unlisten = await api.onUpdateProgress((done, total) => setPhase({ kind: "downloading", done, total: total ?? info.size }));
     try {
@@ -79,7 +80,7 @@ export function SettingsDialog({ devices, settings: s, update, close, updateInfo
       await api.installUpdate(path);
     } catch (e) {
       setPhase({ kind: "idle" });
-      setUpdateError(errorText(s.lang, e));
+      fail(e);
     } finally {
       unlisten();
     }
@@ -91,6 +92,12 @@ export function SettingsDialog({ devices, settings: s, update, close, updateInfo
   }, []);
   const [checking, setChecking] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
+  const fail = (e: unknown) => {
+    const raw = String(e ?? "");
+    setUpdateError(errorText(s.lang, raw));
+    setErrorDetail(raw.startsWith("UPDATE_FAILED:") ? raw.slice("UPDATE_FAILED:".length) : null);
+  };
   const [version, setVersion] = useState("");
 
   useEffect(() => {
@@ -106,10 +113,11 @@ export function SettingsDialog({ devices, settings: s, update, close, updateInfo
   const checkNow = async () => {
     setChecking(true);
     setUpdateError(null);
+    setErrorDetail(null);
     try {
       setUpdateInfo(await api.checkUpdate());
     } catch (e) {
-      setUpdateError(errorText(s.lang, e));
+      fail(e);
     } finally {
       setChecking(false);
     }
@@ -160,6 +168,7 @@ export function SettingsDialog({ devices, settings: s, update, close, updateInfo
                 <Choice value={s.theme} onChange={(theme) => update({ theme })} options={[{ value: "dark", label: t.themeDark }, { value: "light", label: t.themeLight }]} />
               </div>
               <Toggle label={t.hideHubs} desc={t.hideHubsDesc} checked={s.hideHubs} onChange={(hideHubs) => update({ hideHubs })} />
+              <Toggle label={t.showInterfaces} desc={t.showInterfacesDesc} checked={s.showInterfaces} onChange={(showInterfaces) => update({ showInterfaces })} />
             </div>
           )}
 
@@ -291,6 +300,12 @@ export function SettingsDialog({ devices, settings: s, update, close, updateInfo
                 )}
                 {phase.kind === "installing" && <div className="update-status new">{t.installingUpdate}</div>}
                 {updateError && <div className="update-status err">{updateError}</div>}
+                {updateError && errorDetail && (
+                  <details className="err-detail">
+                    <summary>{t.errorDetail}</summary>
+                    <code>{errorDetail}</code>
+                  </details>
+                )}
                 <div className="update-actions">
                   {updateInfo?.available && updateInfo.installer ? (
                     <button className="btn primary" onClick={() => startUpdate(updateInfo)} disabled={busyUpdating}>

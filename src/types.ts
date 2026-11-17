@@ -33,6 +33,15 @@ export interface UsbDevice {
   lastArrival: string | null;
   lastRemoval: string | null;
   security: Security;
+  children: ChildDevice[];
+}
+
+export interface ChildDevice {
+  instanceId: string;
+  name: string;
+  kind: DeviceKind;
+  className: string;
+  service: string;
 }
 
 export type RiskLevel = "none" | "info" | "medium" | "high";
@@ -99,6 +108,7 @@ export interface Settings {
   theme: "dark" | "light";
   hideHubs: boolean;
   sidebarCollapsed: boolean;
+  showInterfaces: boolean;
   alwaysOnTop: boolean;
   closeToTray: boolean;
   startWithWindows: boolean;

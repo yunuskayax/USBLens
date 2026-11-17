@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.3.1",
+    "date": "2026-11-17",
+    "items": [
+      {
+        "type": "fixed",
+        "tr": "Her cihaz bir kez listelenir: USB bellek, disk kaydı ve bileşik cihaz arayüzleri tek satırda birleştirildi",
+        "en": "Each device is listed once: USB drive, disk entry and composite interfaces are merged into one row"
+      },
+      {
+        "type": "new",
+        "tr": "Ayrıntı panelinde cihazın alt bileşenleri (klavye, disk, ses arayüzü…) listelenir",
+        "en": "Device details list the device's sub-components (keyboard, disk, audio interface…)"
+      },
+      {
+        "type": "fixed",
+        "tr": "Uygulama içi güncellemede \"sunucuya ulaşılamadı\" hatası: indirme artık üç farklı yolla denenir (Windows sertifika deposu, yerleşik sertifikalar, Windows indiricisi)",
+        "en": "In-app update \"could not reach the server\" error: the download now tries three methods (Windows certificate store, built-in roots, Windows downloader)"
+      },
+      {
+        "type": "improved",
+        "tr": "Güncelleme başarısız olursa hatanın ayrıntısı gösterilir",
+        "en": "If an update fails, the error details are shown"
+      },
+      {
+        "type": "new",
+        "tr": "Ayarlar → Genel: alt bileşenleri ayrı satırlarda gösterme seçeneği (ham görünüm)",
+        "en": "Settings → General: option to show sub-components as separate rows (raw view)"
+      }
+    ]
+  },
+  {
     "version": "0.3.0",
     "date": "2026-11-17",
     "items": [

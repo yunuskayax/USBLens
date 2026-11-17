@@ -92,6 +92,23 @@ export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, o
         )}
       </div>
 
+      {d.children.length > 0 && (
+        <div className="children">
+          <div className="side-title">{t.components}</div>
+          {d.children.map((c) => (
+            <div key={c.instanceId} className="child-row" title={c.instanceId}>
+              <span className={`kind-badge k-${c.kind}`}>
+                <KindIcon kind={c.kind} size={14} />
+              </span>
+              <div className="grow">
+                <div>{c.name}</div>
+                <div className="secondary mono">{c.className}{c.service && ` · ${c.service}`}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <dl className="props">
         {rows
           .filter(([, v]) => v != null && v !== "" && v !== "—")

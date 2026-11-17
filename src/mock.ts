@@ -11,7 +11,7 @@ const base = {
   driverVersion: "10.0.22621.1",
 };
 
-type RawDevice = Omit<UsbDevice, "security"> & { security?: Partial<Security> };
+type RawDevice = Omit<UsbDevice, "security" | "children"> & { security?: Partial<Security>; children?: UsbDevice["children"] };
 
 const raw: RawDevice[] = [
   { ...base, instanceId: "USB\\VID_0781&PID_5567\\4C530001234567", name: "SanDisk Cruzer Blade", kind: "storage", className: "USB", service: "USBSTOR", vendorId: "0781", productId: "5567", serialNumber: "4C530001234567", connected: true, driveLetters: ["E:"], firstInstall: "2025-03-02T09:14:00Z", lastArrival: "2026-11-16T07:02:11Z", lastRemoval: "2026-11-12T15:40:00Z" },
@@ -25,12 +25,18 @@ const raw: RawDevice[] = [
   { ...base, instanceId: "USB\\VID_16D0&PID_0753\\5&1C2B3A4&0&4", name: "Digispark Keyboard", kind: "hid", className: "HIDClass", service: "HidUsb", vendorId: "16D0", productId: "0753", serialNumber: null, connected: false, driveLetters: [], firstInstall: "2026-11-15T19:40:00Z", lastArrival: "2026-11-15T19:40:00Z", lastRemoval: "2026-11-15T19:43:00Z",
     security: { keyboard: true, level: "high", reasons: ["PROGRAMMABLE_BOARD:Digispark / MCS"] } },
   { ...base, instanceId: "USB\\VID_1234&PID_ABCD\\0123456789", name: "USB Composite Device", kind: "storage", className: "USB", service: "usbccgp", vendorId: "1234", productId: "ABCD", serialNumber: "0123456789", connected: true, driveLetters: ["F:"], firstInstall: "2026-11-16T21:58:00Z", lastArrival: "2026-11-16T21:58:00Z", lastRemoval: null,
-    security: { keyboard: true, storage: true, level: "high", reasons: ["KEYBOARD_AND_STORAGE", "NEW_KEYBOARD"] } },
+    security: { keyboard: true, storage: true, level: "high", reasons: ["KEYBOARD_AND_STORAGE", "NEW_KEYBOARD"] },
+    children: [
+      { instanceId: "USB\\VID_1234&PID_ABCD&MI_00\\7&2A&0&0000", name: "USB Input Device", kind: "hid", className: "HIDClass", service: "HidUsb" },
+      { instanceId: "USB\\VID_1234&PID_ABCD&MI_01\\7&2A&0&0001", name: "USB Mass Storage Device", kind: "storage", className: "USB", service: "USBSTOR" },
+      { instanceId: "USBSTOR\\DISK&VEN_GENERIC&PROD_FLASH\\0123456789&0", name: "Generic Flash Disk USB Device", kind: "storage", className: "DiskDrive", service: "disk" },
+    ] },
 ];
 
 export const mockDevices: UsbDevice[] = raw.map((d) => ({
   ...d,
   description: d.name,
+  children: d.children ?? [],
   security: {
     rootId: d.instanceId,
     keyboard: d.kind === "hid",

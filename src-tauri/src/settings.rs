@@ -6,6 +6,8 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
+pub const DEFAULT_COPY_TEMPLATE: &str = "{marka} {kapasite} {tür} (S.No: {seri})";
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
@@ -16,6 +18,8 @@ pub struct Settings {
     pub sidebar_collapsed: bool,
     /// Show interfaces and disk entries as separate rows (raw view).
     pub show_interfaces: bool,
+    /// Template for the copyable device label, e.g. "{marka} {kapasite} {tür} (S.No: {seri})".
+    pub copy_template: String,
     // Window
     pub always_on_top: bool,
     pub close_to_tray: bool,
@@ -70,6 +74,7 @@ impl Default for Settings {
             hide_hubs: true,
             sidebar_collapsed: false,
             show_interfaces: false,
+            copy_template: DEFAULT_COPY_TEMPLATE.into(),
             always_on_top: false,
             close_to_tray: true,
             start_with_windows: false,
@@ -108,6 +113,10 @@ impl Settings {
             self.sound_style = "chime".into();
         }
         self.sound_volume = self.sound_volume.min(100);
+        if self.copy_template.trim().is_empty() {
+            self.copy_template = DEFAULT_COPY_TEMPLATE.into();
+        }
+        self.copy_template.truncate(300);
         if self.allowlist_action != "warn" && self.allowlist_action != "block" {
             self.allowlist_action = "warn".into();
         }

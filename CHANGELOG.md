@@ -2,6 +2,22 @@
 
 Bu dosya `src/changelog.json` dosyasından üretilir (`node scripts/changelog.mjs md`).
 
+## 0.3.2 — 2026-11-23
+
+- **Yeni:** Kopyalanabilir etiket: depolama aygıtları için "Kingston 64 GB USB Bellek (S.No: …)" biçiminde otomatik etiket, tek tıkla kopyalama
+- **Yeni:** "Tümünü kopyala": cihazın tüm bilgileri düz metin olarak panoya
+- **Yeni:** Ayarlar → Depolama aygıtları: etiket şablonu ({marka}, {model}, {kapasite}, {tür}, {seri}, {sürücü}…) ve canlı önizleme
+- **Yeni:** Depolama aygıtlarında marka, model ve kapasite (kutudaki boyut ve kullanılabilir alan) gösterilir; USB bellek ile harici disk ayrılır
+
+<details><summary>English</summary>
+
+- **New:** Copyable label: storage devices get an automatic label like "Kingston 64 GB USB Flash Drive (S/N: …)", copied with one click
+- **New:** "Copy all": every device property as plain text to the clipboard
+- **New:** Settings → Storage devices: label template ({brand}, {model}, {capacity}, {type}, {serial}, {drive}…) with live preview
+- **New:** Storage devices show brand, model and capacity (size on the box and usable space); flash drives and external disks are told apart
+
+</details>
+
 ## 0.3.1 — 2026-11-17
 
 - **Düzeltme:** Her cihaz bir kez listelenir: USB bellek, disk kaydı ve bileşik cihaz arayüzleri tek satırda birleştirildi

@@ -191,6 +191,10 @@ mod tests {
             disabled: false,
             problem_code: None,
             drive_letters: vec![],
+            capacity_bytes: None,
+            removable: None,
+            vendor_name: None,
+            product_name: None,
             location: None,
             parent_id: parent.map(Into::into),
             driver_version: None,
@@ -306,6 +310,8 @@ mod tests {
         assert_eq!(grouped[0].description, "Kingston Keypad200 USB Device");
         assert_eq!(grouped[0].drive_letters, vec!["H:".to_string()]);
         assert_eq!(grouped[0].children.len(), 1);
+        assert_eq!(grouped[0].vendor_name.as_deref(), Some("KINGSTON"));
+        assert_eq!(grouped[0].product_name.as_deref(), Some("KEYPAD200"));
         // Composite parent takes the most telling child type (audio over HID).
         assert_eq!(grouped[1].kind, DeviceKind::Audio);
         assert_eq!(grouped[1].children.len(), 2);

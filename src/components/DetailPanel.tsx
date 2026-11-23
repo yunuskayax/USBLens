@@ -4,6 +4,7 @@ import { dict, kindLabels } from "../i18n";
 import { formatDate } from "../format";
 import { IconCopy, IconEject, IconPower, IconShieldCheck, IconTrash, IconX, KindIcon } from "./Icons";
 import { RiskBox } from "./Security";
+import { brandOf, deviceLabel, detailsText, modelOf, nominalCapacity, usableCapacity } from "../label";
 
 interface Props {
   lang: Lang;
@@ -17,9 +18,10 @@ interface Props {
   root: UsbDevice | null;
   isAllowlisted: boolean;
   onToggleAllow: (root: UsbDevice) => void;
+  copyTemplate: string;
 }
 
-export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, onEject, onUninstall, root, isAllowlisted, onToggleAllow }: Props) {
+export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, onEject, onUninstall, root, isAllowlisted, onToggleAllow, copyTemplate }: Props) {
   const t = dict[lang];
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -33,9 +35,18 @@ export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, o
     }
   };
 
+  const nominal = nominalCapacity(d.capacityBytes, lang);
+  const usable = usableCapacity(d.capacityBytes, lang);
+  const capacityText = nominal ? (usable && usable !== nominal ? `${nominal} (${usable} ${t.usable})` : nominal) : null;
+  const isStorage = d.kind === "storage";
+  const label = deviceLabel(d, copyTemplate, lang);
+
   const rows: [string, string | null | undefined, boolean?][] = [
     [t.status, d.disabled ? t.disabledF : d.connected ? t.connected : t.history],
     [t.type, kindLabels[lang][d.kind]],
+    [t.brand, brandOf(d)],
+    [t.model, modelOf(d)],
+    [t.capacity, capacityText],
     [t.interfaces, [d.security.keyboard && t.keyboardCap, d.security.storage && t.storageCap].filter(Boolean).join(", ")],
     [t.allowlist, d.security.allowed == null ? null : d.security.allowed ? t.allowedTag : t.notAllowedTag],
     ["VID", d.vendorId],
@@ -74,6 +85,24 @@ export function DetailPanel({ lang, device: d, busy, onClose, onToggleEnabled, o
       </header>
 
       <RiskBox lang={lang} security={d.security} />
+
+      <div className="label-box">
+        <div className="label-head">
+          <span className="side-title">{isStorage ? t.copyLabel : ""}</span>
+          <button
+            className="link muted"
+            onClick={() => copy("__all", `${isStorage ? `${label}\n\n` : ""}${detailsText(rows.map(([k, v]) => [k, v ?? null]))}`)}
+          >
+            {copied === "__all" ? t.copied : t.copyAll}
+          </button>
+        </div>
+        {isStorage && (
+          <button className="label-text" onClick={() => copy("__label", label)} title={t.copy}>
+            <span>{label}</span>
+            {copied === "__label" ? <b className="copied-pill">{t.copied}</b> : <IconCopy size={15} />}
+          </button>
+        )}
+      </div>
 
       <div className="actions">
         <button className="btn" disabled={busy} onClick={() => onToggleEnabled(d)}>

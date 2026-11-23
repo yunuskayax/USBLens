@@ -488,6 +488,7 @@ export default function App() {
             root={selectedRoot}
             isAllowlisted={!!selectedRoot && settings.allowlist.some((e) => api.allowMatches(e, selectedRoot))}
             onToggleAllow={toggleAllow}
+            copyTemplate={settings.copyTemplate}
           />
         )}
       </div>

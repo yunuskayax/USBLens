@@ -395,3 +395,22 @@ button.admin:hover { text-decoration: underline; }
 .err-detail { font-size: 12px; color: var(--muted); }
 .err-detail summary { cursor: pointer; }
 .err-detail code { display: block; margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); word-break: break-word; white-space: pre-wrap; font-size: 11.5px; }
+
+/* ---------- copyable label ---------- */
+.label-box { margin: 12px 16px 0; }
+.label-head { display: flex; align-items: center; justify-content: space-between; }
+.label-head .side-title { margin: 0 0 6px; }
+.label-text {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 10px;
+  border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 600; font-size: 13.5px;
+}
+.label-text span { flex: 1; word-break: break-word; }
+.label-text svg { color: var(--accent); flex-shrink: 0; }
+.label-text:hover { border-style: solid; }
+.copied-pill { font-size: 11px; color: var(--on); font-weight: 600; flex-shrink: 0; }
+.template-input { width: 100%; padding: 9px 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: 13px "Cascadia Mono", Consolas, ui-monospace, monospace; }
+.template-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.token-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.token { font: 12px "Cascadia Mono", Consolas, monospace; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); cursor: pointer; }
+.token:hover { color: var(--text); border-color: var(--accent); }
+.template-preview { padding: 9px 12px; border-radius: 9px; background: var(--accent-soft); font-weight: 600; }

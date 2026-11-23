@@ -26,6 +26,10 @@ export interface UsbDevice {
   disabled: boolean;
   problemCode: number | null;
   driveLetters: string[];
+  capacityBytes: number | null;
+  removable: boolean | null;
+  vendorName: string | null;
+  productName: string | null;
   location: string | null;
   parentId: string | null;
   driverVersion: string | null;
@@ -109,6 +113,7 @@ export interface Settings {
   hideHubs: boolean;
   sidebarCollapsed: boolean;
   showInterfaces: boolean;
+  copyTemplate: string;
   alwaysOnTop: boolean;
   closeToTray: boolean;
   startWithWindows: boolean;

@@ -4,6 +4,7 @@ import { dict, errorText } from "../i18n";
 import * as api from "../api";
 import { playUsbSound } from "../sound";
 import { CHANGELOG, ChangelogList, RemoteNotes } from "./Changelog";
+import { TEMPLATE_TOKENS, deviceLabel } from "../label";
 import { IconBell, IconDownload, IconGlobe, IconRefresh, IconShieldAlert, IconTrash, IconWindow, IconX, KindIcon } from "./Icons";
 
 export type Section = "general" | "window" | "notifications" | "storage" | "security" | "updates";
@@ -65,6 +66,11 @@ function Choice<T extends string>({ value, options, onChange }: {
 export function SettingsDialog({ devices, settings: s, update, close, updateInfo, setUpdateInfo, initialSection, autoUpdate }: Props) {
   const t = dict[s.lang];
   const [section, setSection] = useState<Section>(initialSection ?? "general");
+  const sample =
+    devices.find((d) => d.kind === "storage" && d.connected && d.capacityBytes) ??
+    devices.find((d) => d.kind === "storage") ??
+    devices[0];
+  const previewLabel = sample ? deviceLabel(sample, s.copyTemplate, s.lang) : "—";
   const [phase, setPhase] = useState<UpdatePhase>({ kind: "idle" });
   const busyUpdating = phase.kind !== "idle";
 
@@ -261,6 +267,30 @@ export function SettingsDialog({ devices, settings: s, update, close, updateInfo
               <p className="settings-note">{t.sStorageNote}</p>
               <Toggle label={t.bringToFront} desc={t.bringToFrontDesc} checked={s.bringToFrontOnStorage} onChange={(bringToFrontOnStorage) => update({ bringToFrontOnStorage })} />
               <Toggle label={t.openExplorer} desc={t.openExplorerDesc} checked={s.openExplorerOnStorage} onChange={(openExplorerOnStorage) => update({ openExplorerOnStorage })} />
+
+              <h3 className="settings-sub">{t.copyTemplate}</h3>
+              <p className="setting-desc" style={{ margin: "0 0 10px" }}>{t.copyTemplateDesc}</p>
+              <input
+                className="template-input"
+                value={s.copyTemplate}
+                spellCheck={false}
+                onChange={(e) => update({ copyTemplate: e.target.value })}
+              />
+              <div className="setting col" style={{ borderBottom: 0, cursor: "default" }}>
+                <span className="setting-desc">{t.tokens}</span>
+                <div className="token-row">
+                  {TEMPLATE_TOKENS.map((tok) => (
+                    <button key={tok} className="token" onClick={() => update({ copyTemplate: `${s.copyTemplate.trimEnd()} ${tok}`.trim() })}>
+                      {tok}
+                    </button>
+                  ))}
+                  <button className="link muted" onClick={() => update({ copyTemplate: api.defaultSettings.copyTemplate })}>
+                    {t.resetTemplate}
+                  </button>
+                </div>
+                <span className="setting-desc">{t.preview}</span>
+                <div className="template-preview">{previewLabel}</div>
+              </div>
             </div>
           )}
 

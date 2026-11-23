@@ -1,5 +1,31 @@
 [
   {
+    "version": "0.3.2",
+    "date": "2026-11-23",
+    "items": [
+      {
+        "type": "new",
+        "tr": "Kopyalanabilir etiket: depolama aygıtları için \"Kingston 64 GB USB Bellek (S.No: …)\" biçiminde otomatik etiket, tek tıkla kopyalama",
+        "en": "Copyable label: storage devices get an automatic label like \"Kingston 64 GB USB Flash Drive (S/N: …)\", copied with one click"
+      },
+      {
+        "type": "new",
+        "tr": "\"Tümünü kopyala\": cihazın tüm bilgileri düz metin olarak panoya",
+        "en": "\"Copy all\": every device property as plain text to the clipboard"
+      },
+      {
+        "type": "new",
+        "tr": "Ayarlar → Depolama aygıtları: etiket şablonu ({marka}, {model}, {kapasite}, {tür}, {seri}, {sürücü}…) ve canlı önizleme",
+        "en": "Settings → Storage devices: label template ({brand}, {model}, {capacity}, {type}, {serial}, {drive}…) with live preview"
+      },
+      {
+        "type": "new",
+        "tr": "Depolama aygıtlarında marka, model ve kapasite (kutudaki boyut ve kullanılabilir alan) gösterilir; USB bellek ile harici disk ayrılır",
+        "en": "Storage devices show brand, model and capacity (size on the box and usable space); flash drives and external disks are told apart"
+      }
+    ]
+  },
+  {
     "version": "0.3.1",
     "date": "2026-11-17",
     "items": [

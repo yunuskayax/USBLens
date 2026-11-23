@@ -21,7 +21,9 @@ use windows_sys::Win32::Storage::FileSystem::{
     CreateFileW, GetLogicalDrives, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
 };
 use windows_sys::Win32::System::Ioctl::{
-    GUID_DEVINTERFACE_DISK, IOCTL_STORAGE_GET_DEVICE_NUMBER, STORAGE_DEVICE_NUMBER,
+    PropertyStandardQuery, StorageDeviceProperty, DISK_GEOMETRY_EX, GUID_DEVINTERFACE_DISK,
+    IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, IOCTL_STORAGE_GET_DEVICE_NUMBER, IOCTL_STORAGE_QUERY_PROPERTY,
+    STORAGE_DEVICE_DESCRIPTOR, STORAGE_DEVICE_NUMBER, STORAGE_PROPERTY_QUERY,
 };
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 use windows_sys::Win32::System::IO::DeviceIoControl;
@@ -239,10 +241,86 @@ unsafe fn usb_ancestor(instance_id: &str) -> Option<String> {
     None
 }
 
-/// Map (upper-cased) instance ids of disks and their USB parents to drive letters.
-fn drive_letter_map() -> HashMap<String, Vec<String>> {
+/// What we know about a connected disk (and the USB device it sits on).
+#[derive(Default, Clone)]
+struct DiskInfo {
+    letters: Vec<String>,
+    size: Option<u64>,
+    removable: Option<bool>,
+    vendor: Option<String>,
+    product: Option<String>,
+}
+
+/// Read an ASCII string at `offset` inside an IOCTL output buffer.
+fn ascii_at(buf: &[u8], offset: u32) -> Option<String> {
+    let o = offset as usize;
+    if o == 0 || o >= buf.len() {
+        return None;
+    }
+    let end = buf[o..].iter().position(|&b| b == 0).map(|e| o + e).unwrap_or(buf.len());
+    let s = String::from_utf8_lossy(&buf[o..end]).trim().to_string();
+    (!s.is_empty()).then_some(s)
+}
+
+/// Capacity, removable flag, vendor and product of a disk. Both IOCTLs accept a handle
+/// opened with no access rights, so this works without administrator rights.
+unsafe fn disk_details(path: &str) -> DiskInfo {
+    let mut info = DiskInfo::default();
+    let w = wide(path);
+    let h = CreateFileW(w.as_ptr(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, null(), OPEN_EXISTING, 0, null_mut());
+    if h == INVALID_HANDLE_VALUE || h.is_null() {
+        return info;
+    }
+    let h = Handle(h);
+    let mut returned = 0u32;
+
+    let mut geo = vec![0u64; 32]; // DISK_GEOMETRY_EX + trailing data, 8-byte aligned
+    if DeviceIoControl(
+        h.0,
+        IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
+        null(),
+        0,
+        geo.as_mut_ptr() as *mut c_void,
+        (geo.len() * 8) as u32,
+        &mut returned,
+        null_mut(),
+    ) != 0
+    {
+        let g = &*(geo.as_ptr() as *const DISK_GEOMETRY_EX);
+        if g.DiskSize > 0 {
+            info.size = Some(g.DiskSize as u64);
+        }
+    }
+
+    let mut query: STORAGE_PROPERTY_QUERY = zeroed();
+    query.PropertyId = StorageDeviceProperty;
+    query.QueryType = PropertyStandardQuery;
+    let mut buf = vec![0u8; 1024];
+    if DeviceIoControl(
+        h.0,
+        IOCTL_STORAGE_QUERY_PROPERTY,
+        &query as *const _ as *const c_void,
+        size_of::<STORAGE_PROPERTY_QUERY>() as u32,
+        buf.as_mut_ptr() as *mut c_void,
+        buf.len() as u32,
+        &mut returned,
+        null_mut(),
+    ) != 0
+        && returned as usize >= size_of::<STORAGE_DEVICE_DESCRIPTOR>()
+    {
+        let d = std::ptr::read_unaligned(buf.as_ptr() as *const STORAGE_DEVICE_DESCRIPTOR);
+        info.removable = Some(d.RemovableMedia);
+        let used = &buf[..returned as usize];
+        info.vendor = ascii_at(used, d.VendorIdOffset);
+        info.product = ascii_at(used, d.ProductIdOffset);
+    }
+    info
+}
+
+/// Map (upper-cased) instance ids of connected disks and their USB parents to disk details.
+fn disk_info_map() -> HashMap<String, DiskInfo> {
     let mut by_number: HashMap<(u32, u32), Vec<String>> = HashMap::new();
-    let mut result: HashMap<String, Vec<String>> = HashMap::new();
+    let mut result: HashMap<String, DiskInfo> = HashMap::new();
 
     unsafe {
         let mask = GetLogicalDrives();
@@ -254,9 +332,6 @@ fn drive_letter_map() -> HashMap<String, Vec<String>> {
             if let Some(n) = storage_number(&format!("\\\\.\\{letter}:")) {
                 by_number.entry(n).or_default().push(format!("{letter}:"));
             }
-        }
-        if by_number.is_empty() {
-            return result;
         }
 
         let Some(set) = DevInfoSet::new(SetupDiGetClassDevsW(
@@ -291,26 +366,21 @@ fn drive_letter_map() -> HashMap<String, Vec<String>> {
                 continue;
             }
             let path = from_wide_ptr((*detail).DevicePath.as_ptr());
-            let Some(num) = storage_number(&path) else { continue };
-            let Some(letters) = by_number.get(&num) else { continue };
             let Some(disk_id) = instance_id_of(set.0, &dev) else { continue };
+            // Only disks that sit on USB.
+            let Some(usb) = usb_ancestor(&disk_id) else { continue };
 
-            if let Some(usb) = usb_ancestor(&disk_id) {
-                result
-                    .entry(usb.to_ascii_uppercase())
-                    .or_default()
-                    .extend(letters.iter().cloned());
+            let mut info = disk_details(&path);
+            if let Some(num) = storage_number(&path) {
+                if let Some(l) = by_number.get(&num) {
+                    info.letters = l.clone();
+                }
             }
-            result
-                .entry(disk_id.to_ascii_uppercase())
-                .or_default()
-                .extend(letters.iter().cloned());
+            info.letters.sort();
+            info.letters.dedup();
+            result.insert(usb.to_ascii_uppercase(), info.clone());
+            result.insert(disk_id.to_ascii_uppercase(), info);
         }
-    }
-
-    for v in result.values_mut() {
-        v.sort();
-        v.dedup();
     }
     result
 }
@@ -323,7 +393,7 @@ const CM_PROB_DISABLED_CODE: u32 = 22;
 unsafe fn build_device(
     set: HDEVINFO,
     data: &SP_DEVINFO_DATA,
-    letters: &HashMap<String, Vec<String>>,
+    disks: &HashMap<String, DiskInfo>,
 ) -> Option<UsbDevice> {
     let instance_id = instance_id_of(set, data)?;
     let p = Props { set, data };
@@ -355,11 +425,13 @@ unsafe fn build_device(
     let (vendor_id, product_id, serial_number) = parse_instance_id(&instance_id);
     let kind = classify(&class_name, &service, &name, &instance_id);
 
+    let disk = disks.get(&instance_id.to_ascii_uppercase()).cloned().unwrap_or_default();
     Some(UsbDevice {
-        drive_letters: letters
-            .get(&instance_id.to_ascii_uppercase())
-            .cloned()
-            .unwrap_or_default(),
+        drive_letters: disk.letters,
+        capacity_bytes: disk.size,
+        removable: disk.removable,
+        vendor_name: disk.vendor,
+        product_name: disk.product,
         location: p.string(&DEVPKEY_Device_LocationInfo),
         parent_id: p.string(&DEVPKEY_Device_Parent),
         driver_version: p.string(&DEVPKEY_Device_DriverVersion),
@@ -387,7 +459,7 @@ unsafe fn build_device(
 }
 
 pub fn list_devices() -> Result<Vec<UsbDevice>, String> {
-    let letters = drive_letter_map();
+    let disks = disk_info_map();
     let mut out = Vec::new();
 
     for enumerator in ["USB", "USBSTOR"] {
@@ -409,7 +481,7 @@ pub fn list_devices() -> Result<Vec<UsbDevice>, String> {
                     break;
                 }
                 index += 1;
-                if let Some(d) = build_device(set.0, &data, &letters) {
+                if let Some(d) = build_device(set.0, &data, &disks) {
                     out.push(d);
                 }
             }
@@ -461,7 +533,7 @@ unsafe fn open_single(instance_id: &str) -> Result<(DevInfoSet, SP_DEVINFO_DATA)
 pub fn get_device(instance_id: &str) -> Option<UsbDevice> {
     unsafe {
         let (set, data) = open_single(instance_id).ok()?;
-        build_device(set.0, &data, &drive_letter_map())
+        build_device(set.0, &data, &disk_info_map())
     }
 }
 

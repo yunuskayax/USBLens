@@ -39,6 +39,13 @@ pub struct UsbDevice {
     pub disabled: bool,
     pub problem_code: Option<u32>,
     pub drive_letters: Vec<String>,
+    /// Disk size in bytes (connected storage only).
+    pub capacity_bytes: Option<u64>,
+    /// Removable media (flash drive) vs fixed disk (external HDD/SSD).
+    pub removable: Option<bool>,
+    /// Brand / model reported by the disk ("Kingston", "DataTraveler 3.0").
+    pub vendor_name: Option<String>,
+    pub product_name: Option<String>,
     pub location: Option<String>,
     pub parent_id: Option<String>,
     pub driver_version: Option<String>,
@@ -123,6 +130,11 @@ pub fn group_children(devices: Vec<UsbDevice>) -> Vec<UsbDevice> {
             }
             // A disk entry carries the full product name ("Kingston Keypad200 USB Device").
             if let Some(disk) = kids.iter().find(|c| c.instance_id.to_ascii_uppercase().starts_with("USBSTOR\\")) {
+                let (ven, prod) = usbstor_vendor_product(&disk.instance_id);
+                root.vendor_name = root.vendor_name.take().or_else(|| disk.vendor_name.clone()).or(ven);
+                root.product_name = root.product_name.take().or_else(|| disk.product_name.clone()).or(prod);
+                root.capacity_bytes = root.capacity_bytes.or(disk.capacity_bytes);
+                root.removable = root.removable.or(disk.removable);
                 if is_generic_name(&root.name) {
                     root.name = disk.name.clone();
                 } else if is_generic_name(&root.description) || root.description.is_empty() {
@@ -228,6 +240,18 @@ pub fn symlink_to_instance_id(link: &str) -> Option<String> {
         .unwrap_or(link);
     let (body, _guid) = s.rsplit_once("#{")?;
     Some(body.replace('#', "\\"))
+}
+
+/// `USBSTOR\Disk&Ven_Kingston&Prod_DataTraveler_3.0&Rev_PMAP\…` -> ("Kingston", "DataTraveler 3.0")
+pub fn usbstor_vendor_product(id: &str) -> (Option<String>, Option<String>) {
+    let hw = id.split('\\').nth(1).unwrap_or("");
+    let field = |prefix: &str| {
+        hw.split('&')
+            .find_map(|t| t.get(..prefix.len()).filter(|p| p.eq_ignore_ascii_case(prefix)).map(|_| &t[prefix.len()..]))
+            .map(|v| v.replace('_', " ").trim().to_string())
+            .filter(|v| !v.is_empty())
+    };
+    (field("Ven_"), field("Prod_"))
 }
 
 /// Parse VID / PID / serial from a PnP instance id.
@@ -348,6 +372,14 @@ mod tests {
             .as_deref(),
             Some("USB\\VID_0781&PID_5567\\4C530001234567")
         );
+    }
+
+    #[test]
+    fn reads_usbstor_vendor_and_product() {
+        let (v, p) = usbstor_vendor_product("USBSTOR\\Disk&Ven_Kingston&Prod_DataTraveler_3.0&Rev_PMAP\\60A44C&0");
+        assert_eq!(v.as_deref(), Some("Kingston"));
+        assert_eq!(p.as_deref(), Some("DataTraveler 3.0"));
+        assert_eq!(usbstor_vendor_product("USB\\VID_0781&PID_5567\\X"), (None, None));
     }
 
     #[test]

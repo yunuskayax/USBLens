@@ -1,7 +1,7 @@
 {
-  "version": "0.3.2",
+  "version": "0.3.3",
   "date": "2026-11-23",
   "url": "https://github.com/yunuskayax/USBLens/releases/latest/download/UsbLens-setup.exe",
   "page": "https://usblens.com",
-  "notes": "Kopyalanabilir cihaz etiketi, marka/model/kapasite bilgisi."
+  "notes": "Gezgin sağ tık menüsü: USB sürücüye sağ tıklayıp etiketi kopyalama."
 }

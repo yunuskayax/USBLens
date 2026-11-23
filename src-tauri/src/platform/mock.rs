@@ -107,3 +107,16 @@ where
 {
     Ok(())
 }
+
+pub fn set_context_menu(_enable: bool, _items: &[(&str, &str, &str)], _title: &str) -> Result<(), String> {
+    Ok(())
+}
+
+pub fn copy_text(text: &str) -> Result<(), String> {
+    println!("{text}");
+    Ok(())
+}
+
+pub fn message_box(title: &str, text: &str, _warning: bool) {
+    eprintln!("{title}: {text}");
+}

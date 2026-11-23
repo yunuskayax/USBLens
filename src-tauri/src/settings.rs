@@ -20,6 +20,8 @@ pub struct Settings {
     pub show_interfaces: bool,
     /// Template for the copyable device label, e.g. "{marka} {kapasite} {tür} (S.No: {seri})".
     pub copy_template: String,
+    /// "UsbLens ▸ Etiketi kopyala …" in Explorer's right-click menu for drives.
+    pub explorer_context_menu: bool,
     // Window
     pub always_on_top: bool,
     pub close_to_tray: bool,
@@ -75,6 +77,7 @@ impl Default for Settings {
             sidebar_collapsed: false,
             show_interfaces: false,
             copy_template: DEFAULT_COPY_TEMPLATE.into(),
+            explorer_context_menu: true,
             always_on_top: false,
             close_to_tray: true,
             start_with_windows: false,

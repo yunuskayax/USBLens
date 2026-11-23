@@ -268,6 +268,8 @@ export function SettingsDialog({ devices, settings: s, update, close, updateInfo
               <Toggle label={t.bringToFront} desc={t.bringToFrontDesc} checked={s.bringToFrontOnStorage} onChange={(bringToFrontOnStorage) => update({ bringToFrontOnStorage })} />
               <Toggle label={t.openExplorer} desc={t.openExplorerDesc} checked={s.openExplorerOnStorage} onChange={(openExplorerOnStorage) => update({ openExplorerOnStorage })} />
 
+              <Toggle label={t.contextMenu} desc={t.contextMenuDesc} checked={s.explorerContextMenu} onChange={(explorerContextMenu) => update({ explorerContextMenu })} />
+
               <h3 className="settings-sub">{t.copyTemplate}</h3>
               <p className="setting-desc" style={{ margin: "0 0 10px" }}>{t.copyTemplateDesc}</p>
               <input

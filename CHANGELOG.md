@@ -2,6 +2,20 @@
 
 Bu dosya `src/changelog.json` dosyasından üretilir (`node scripts/changelog.mjs md`).
 
+## 0.3.3 — 2026-11-23
+
+- **Yeni:** Gezgin sağ tık menüsü: bir USB sürücüye sağ tıklayınca "UsbLens ▸ Etiketi kopyala / Tüm bilgileri kopyala / UsbLens'te göster"
+- **Yeni:** Kopyalama, UsbLens penceresi açılmadan anında yapılır; etiket Ayarlar'daki şablonu kullanır
+- **İyileştirme:** Ayarlar → Depolama aygıtları: sağ tık menüsünü açıp kapatma seçeneği (varsayılan açık, yönetici izni gerekmez); kaldırırken menü de silinir
+
+<details><summary>English</summary>
+
+- **New:** Explorer right-click menu: right-click a USB drive for "UsbLens ▸ Copy label / Copy all details / Show in UsbLens"
+- **New:** Copying happens instantly without opening the UsbLens window; the label uses the template from Settings
+- **Improved:** Settings → Storage devices: turn the right-click menu on or off (on by default, no admin rights needed); uninstalling removes it
+
+</details>
+
 ## 0.3.2 — 2026-11-23
 
 - **Yeni:** Kopyalanabilir etiket: depolama aygıtları için "Kingston 64 GB USB Bellek (S.No: …)" biçiminde otomatik etiket, tek tıkla kopyalama

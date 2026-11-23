@@ -1,6 +1,6 @@
 [package]
 name = "usblens"
-version = "0.3.2"
+version = "0.3.3"
 description = "Modern, open-source USB device viewer for Windows"
 authors = ["Yunus"]
 license = "MIT"
@@ -37,7 +37,10 @@ features = [
   "Win32_Devices_Properties",
   "Win32_Devices_Usb",
   "Win32_Storage_FileSystem",
+  "Win32_System_DataExchange",
   "Win32_System_IO",
+  "Win32_System_Memory",
+  "Win32_System_Registry",
   "Win32_System_Ioctl",
   "Win32_System_Threading",
   "Win32_Security",

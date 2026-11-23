@@ -39,6 +39,8 @@ ve sürücü harfleriyle listeler. Canlı takılma bildirimi verir ve adli bili�
 - **Cihaz işlemleri:** Etkinleştir / devre dışı bırak, güvenli çıkar, kaldır (geçmiş kayıtlar dahil).
 - **Canlı bildirim:** USB takılınca / çıkarılınca uygulama içi uyarı, Windows bildirimi ve sesli uyarı (kısa ton veya cihaz adını sesli okuma).
 - **Dışa aktarma:** HTML rapor (yazdır → PDF), CSV (Excel uyumlu, Türkçe karakterli) ve JSON. Rapora bilgisayar adı, kullanıcı, zaman damgası ve **SHA-256** özeti eklenir.
+- **Kopyalanabilir etiket:** Depolama aygıtları için `Kingston 64 GB USB Bellek (S.No: …)` gibi hazır etiket; şablon ayarlardan değiştirilebilir. "Tümünü kopyala" ile bütün bilgiler düz metin olarak panoya.
+- **Gezgin sağ tık menüsü:** Bir USB sürücüye sağ tıklayınca **UsbLens ▸ Etiketi kopyala / Tüm bilgileri kopyala / UsbLens'te göster**. Pencere açılmadan kopyalar, yönetici izni gerekmez (Windows 11'de "Diğer seçenekleri göster" altında).
 - **Ayarlar:** Her zaman üstte, kapatınca sistem tepsisine küçült, Windows ile başlat, küçültülmüş başlat; depolama aygıtı takılınca uygulamayı öne getir / sürücüyü Gezgin'de aç; açılışta güncelleme denetimi.
 - Sistem tepsisi simgesi (Göster / Ayarlar / Çıkış), tek örnek çalışma.
 - Daraltılabilir kenar çubuğu (`Ctrl+B`), koyu / açık tema, Türkçe / İngilizce arayüz, `Ctrl+F` arama, `F5` yenile.

@@ -711,3 +711,168 @@ where
     }
     Ok(())
 }
+
+// ---------------------------------------------------------------- Explorer integration
+
+mod shell {
+    use super::wide;
+    use std::ptr::{null, null_mut};
+    use windows_sys::Win32::Foundation::{GlobalFree, ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
+    use windows_sys::Win32::System::DataExchange::{CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData};
+    use windows_sys::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
+    use windows_sys::Win32::System::Registry::{
+        RegCloseKey, RegCreateKeyExW, RegDeleteTreeW, RegSetValueExW, HKEY, HKEY_CURRENT_USER, KEY_WRITE,
+        REG_OPTION_NON_VOLATILE, REG_SZ,
+    };
+    use windows_sys::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONINFORMATION, MB_ICONWARNING, MB_OK, MB_SETFOREGROUND};
+
+    /// Right-click menu on drives: HKCU, so no admin rights are needed.
+    pub const MENU_KEY: &str = r"Software\Classes\Drive\shell\UsbLens";
+    const CF_UNICODETEXT: u32 = 13;
+
+    struct Key(HKEY);
+    impl Drop for Key {
+        fn drop(&mut self) {
+            unsafe { RegCloseKey(self.0) };
+        }
+    }
+
+    fn create(path: &str) -> Result<Key, String> {
+        let p = wide(path);
+        let mut key: HKEY = null_mut();
+        let r = unsafe {
+            RegCreateKeyExW(
+                HKEY_CURRENT_USER,
+                p.as_ptr(),
+                0,
+                null(),
+                REG_OPTION_NON_VOLATILE,
+                KEY_WRITE,
+                null(),
+                &mut key,
+                null_mut(),
+            )
+        };
+        if r == ERROR_SUCCESS {
+            Ok(Key(key))
+        } else {
+            Err(format!("RegCreateKeyExW({path}) = {r}"))
+        }
+    }
+
+    fn set(key: &Key, name: Option<&str>, value: &str) -> Result<(), String> {
+        let n = name.map(wide);
+        let v = wide(value);
+        let r = unsafe {
+            RegSetValueExW(
+                key.0,
+                n.as_ref().map_or(null(), |n| n.as_ptr()),
+                0,
+                REG_SZ,
+                v.as_ptr() as *const u8,
+                (v.len() * 2) as u32,
+            )
+        };
+        if r == ERROR_SUCCESS {
+            Ok(())
+        } else {
+            Err(format!("RegSetValueExW = {r}"))
+        }
+    }
+
+    pub fn remove_menu() -> Result<(), String> {
+        let p = wide(MENU_KEY);
+        let r = unsafe { RegDeleteTreeW(HKEY_CURRENT_USER, p.as_ptr()) };
+        if r == ERROR_SUCCESS || r == ERROR_FILE_NOT_FOUND {
+            Ok(())
+        } else {
+            Err(format!("RegDeleteTreeW = {r}"))
+        }
+    }
+
+    /// (sub-key, label, argument)
+    pub fn install_menu(exe: &str, title: &str, items: &[(&str, &str, &str)]) -> Result<(), String> {
+        // Start clean so renamed/removed items do not linger.
+        remove_menu()?;
+        let root = create(MENU_KEY)?;
+        set(&root, Some("MUIVerb"), title)?;
+        set(&root, Some("Icon"), &format!("\"{exe}\",0"))?;
+        set(&root, Some("SubCommands"), "")?;
+        for (sub, label, arg) in items {
+            let item = create(&format!(r"{MENU_KEY}\shell\{sub}"))?;
+            set(&item, Some("MUIVerb"), label)?;
+            set(&item, Some("Icon"), &format!("\"{exe}\",0"))?;
+            let cmd = create(&format!(r"{MENU_KEY}\shell\{sub}\command"))?;
+            set(&cmd, None, &format!("\"{exe}\" {arg} \"%1\""))?;
+        }
+        Ok(())
+    }
+
+    pub fn copy_text(text: &str) -> Result<(), String> {
+        let w = wide(text);
+        unsafe {
+            // Another program may hold the clipboard for a moment.
+            let mut opened = false;
+            for _ in 0..10 {
+                if OpenClipboard(null_mut()) != 0 {
+                    opened = true;
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            if !opened {
+                return Err("clipboard busy".into());
+            }
+            EmptyClipboard();
+            let bytes = w.len() * 2;
+            let mem = GlobalAlloc(GMEM_MOVEABLE, bytes);
+            if mem.is_null() {
+                CloseClipboard();
+                return Err("GlobalAlloc failed".into());
+            }
+            let dst = GlobalLock(mem) as *mut u16;
+            if dst.is_null() {
+                GlobalFree(mem);
+                CloseClipboard();
+                return Err("GlobalLock failed".into());
+            }
+            std::ptr::copy_nonoverlapping(w.as_ptr(), dst, w.len());
+            GlobalUnlock(mem);
+            // On success the system owns the memory.
+            let ok = !SetClipboardData(CF_UNICODETEXT, mem).is_null();
+            if !ok {
+                GlobalFree(mem);
+            }
+            CloseClipboard();
+            if ok {
+                Ok(())
+            } else {
+                Err("SetClipboardData failed".into())
+            }
+        }
+    }
+
+    pub fn message(title: &str, text: &str, warning: bool) {
+        let t = wide(title);
+        let m = wide(text);
+        let icon = if warning { MB_ICONWARNING } else { MB_ICONINFORMATION };
+        unsafe { MessageBoxW(null_mut(), m.as_ptr(), t.as_ptr(), MB_OK | icon | MB_SETFOREGROUND) };
+    }
+}
+
+/// Adds or removes "UsbLens ▸ …" in Explorer's right-click menu for drives.
+pub fn set_context_menu(enable: bool, items: &[(&str, &str, &str)], title: &str) -> Result<(), String> {
+    if !enable {
+        return shell::remove_menu();
+    }
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    shell::install_menu(&exe.to_string_lossy(), title, items)
+}
+
+pub fn copy_text(text: &str) -> Result<(), String> {
+    shell::copy_text(text)
+}
+
+pub fn message_box(title: &str, text: &str, warning: bool) {
+    shell::message(title, text, warning)
+}

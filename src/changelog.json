@@ -1,5 +1,26 @@
 [
   {
+    "version": "0.3.3",
+    "date": "2026-11-23",
+    "items": [
+      {
+        "type": "new",
+        "tr": "Gezgin sağ tık menüsü: bir USB sürücüye sağ tıklayınca \"UsbLens ▸ Etiketi kopyala / Tüm bilgileri kopyala / UsbLens'te göster\"",
+        "en": "Explorer right-click menu: right-click a USB drive for \"UsbLens ▸ Copy label / Copy all details / Show in UsbLens\""
+      },
+      {
+        "type": "new",
+        "tr": "Kopyalama, UsbLens penceresi açılmadan anında yapılır; etiket Ayarlar'daki şablonu kullanır",
+        "en": "Copying happens instantly without opening the UsbLens window; the label uses the template from Settings"
+      },
+      {
+        "type": "improved",
+        "tr": "Ayarlar → Depolama aygıtları: sağ tık menüsünü açıp kapatma seçeneği (varsayılan açık, yönetici izni gerekmez); kaldırırken menü de silinir",
+        "en": "Settings → Storage devices: turn the right-click menu on or off (on by default, no admin rights needed); uninstalling removes it"
+      }
+    ]
+  },
+  {
     "version": "0.3.2",
     "date": "2026-11-23",
     "items": [

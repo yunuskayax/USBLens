@@ -93,6 +93,19 @@ export async function onUsbEvent(handler: (e: UsbEvent) => void): Promise<() => 
   return listen<UsbEvent>("usb-event", (e) => handler(e.payload));
 }
 
+/** Drive picked in Explorer ("UsbLens'te göster") before the window was ready. `?showDrive=E:` in a browser. */
+export async function takePendingDrive(): Promise<string | null> {
+  if (!inTauri) return new URLSearchParams(location.search).get("showDrive");
+  return invoke<string | null>("take_pending_drive");
+}
+
+/** "UsbLens'te göster" while UsbLens is already running. */
+export async function onSelectDrive(handler: (drive: string) => void): Promise<() => void> {
+  if (!inTauri) return () => {};
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen<string>("select-drive", (e) => handler(e.payload));
+}
+
 export async function systemNotify(title: string, body: string): Promise<void> {
   if (!inTauri) return;
   try {
@@ -130,6 +143,7 @@ export const defaultSettings: Settings = {
   sidebarCollapsed: false,
   showInterfaces: false,
   copyTemplate: "{marka} {kapasite} {tür} (S.No: {seri})",
+  explorerContextMenu: true,
   alwaysOnTop: false,
   closeToTray: true,
   startWithWindows: false,

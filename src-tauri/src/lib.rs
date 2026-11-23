@@ -1,5 +1,6 @@
 mod events;
 mod export;
+mod label;
 mod model;
 mod platform;
 mod security;
@@ -7,6 +8,7 @@ mod settings;
 mod update;
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use events::{EventLog, LogEvent};
@@ -20,6 +22,94 @@ use tauri_plugin_notification::NotificationExt;
 
 const TRAY_ID: &str = "main-tray";
 const MINIMIZED_ARG: &str = "--minimized";
+const COPY_LABEL_ARG: &str = "--copy-label";
+const COPY_DETAILS_ARG: &str = "--copy-details";
+const SHOW_DRIVE_ARG: &str = "--show-drive";
+
+/// Drive picked with "UsbLens'te göster" before the UI was ready.
+#[derive(Default)]
+struct PendingDrive(Mutex<Option<String>>);
+
+fn arg_value(args: &[String], flag: &str) -> Option<String> {
+    let i = args.iter().position(|a| a == flag)?;
+    args.get(i + 1).cloned()
+}
+
+// ---------------------------------------------------------------- Explorer right-click menu
+
+fn context_menu_texts(lang: &str) -> (&'static str, [(&'static str, &'static str, &'static str); 3]) {
+    if lang == "en" {
+        (
+            "UsbLens",
+            [
+                ("01label", "Copy label", COPY_LABEL_ARG),
+                ("02details", "Copy all details", COPY_DETAILS_ARG),
+                ("03show", "Show in UsbLens", SHOW_DRIVE_ARG),
+            ],
+        )
+    } else {
+        (
+            "UsbLens",
+            [
+                ("01label", "Etiketi kopyala", COPY_LABEL_ARG),
+                ("02details", "Tüm bilgileri kopyala", COPY_DETAILS_ARG),
+                ("03show", "UsbLens'te göster", SHOW_DRIVE_ARG),
+            ],
+        )
+    }
+}
+
+fn register_context_menu(s: &Settings) {
+    let (title, items) = context_menu_texts(&s.lang);
+    if let Err(e) = platform::set_context_menu(s.explorer_context_menu, &items, title) {
+        eprintln!("context menu: {e}");
+    }
+}
+
+/// Settings file without a running Tauri app (same place as `app_config_dir`).
+fn settings_path_for_cli() -> Option<std::path::PathBuf> {
+    let base = std::env::var_os("APPDATA")
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config")))?;
+    Some(base.join("com.yunus.usblens").join("settings.json"))
+}
+
+/// `--copy-label E:\` / `--copy-details E:\` from the Explorer menu: a quick
+/// copy without starting the window. Returns true when the process should exit.
+pub fn handle_cli() -> bool {
+    let args: Vec<String> = std::env::args().collect();
+    let (flag, details) = if args.iter().any(|a| a == COPY_LABEL_ARG) {
+        (COPY_LABEL_ARG, false)
+    } else if args.iter().any(|a| a == COPY_DETAILS_ARG) {
+        (COPY_DETAILS_ARG, true)
+    } else {
+        return false;
+    };
+    let s = settings_path_for_cli().map(SettingsStore::load).map(|st| st.get()).unwrap_or_default();
+    let tr = s.lang != "en";
+    let drive = arg_value(&args, flag).unwrap_or_default();
+    let letter: String = drive.trim().trim_matches('"').chars().take(1).collect::<String>().to_uppercase();
+
+    let result = platform::list_devices().map(model::group_children).and_then(|list| {
+        let d = label::find_by_drive(&list, &drive).ok_or_else(|| {
+            if tr {
+                format!("{letter}: sürücüsü bir USB aygıtına ait değil ya da şu an bağlı değil.")
+            } else {
+                format!("Drive {letter}: is not on a USB device, or it is not connected.")
+            }
+        })?;
+        let text = if details {
+            label::details_text(d, &s.copy_template, &s.lang)
+        } else {
+            label::device_label(d, &s.copy_template, &s.lang)
+        };
+        platform::copy_text(&text)
+    });
+    if let Err(e) = result {
+        platform::message_box("UsbLens", &e, true);
+    }
+    true
+}
 /// Show the "still running in the tray" hint only once per session.
 static TRAY_HINT_SHOWN: AtomicBool = AtomicBool::new(false);
 
@@ -82,6 +172,12 @@ async fn export_events(app: AppHandle, path: String, format: String, lang: Strin
         std::fs::write(&path, content).map_err(|e| e.to_string())
     })
     .await
+}
+
+/// The drive chosen with "UsbLens'te göster" when the app was not running yet.
+#[tauri::command]
+fn take_pending_drive(pending: State<'_, PendingDrive>) -> Option<String> {
+    pending.0.lock().ok().and_then(|mut p| p.take())
 }
 
 #[tauri::command]
@@ -204,6 +300,13 @@ fn apply_settings(app: &AppHandle, s: &Settings, previous: Option<&Settings>) {
         let _ = autostart.enable();
     } else if !s.start_with_windows && enabled {
         let _ = autostart.disable();
+    }
+
+    if previous
+        .map(|p| p.lang != s.lang || p.explorer_context_menu != s.explorer_context_menu)
+        .unwrap_or(true)
+    {
+        register_context_menu(s);
     }
 
     if previous.map(|p| p.lang != s.lang).unwrap_or(true) {
@@ -373,7 +476,10 @@ pub fn run() {
     tauri::Builder::default()
         // Must be first: a second launch just focuses the running window.
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            if !args.iter().any(|a| a == MINIMIZED_ARG) {
+            if let Some(drive) = arg_value(&args, SHOW_DRIVE_ARG) {
+                show_main(app);
+                let _ = app.emit("select-drive", drive);
+            } else if !args.iter().any(|a| a == MINIMIZED_ARG) {
                 show_main(app);
             }
         }))
@@ -388,6 +494,9 @@ pub fn run() {
             app.manage(store);
             let data_dir = app.path().app_data_dir()?;
             app.manage(EventLog::new(data_dir.join("events.jsonl")));
+            let args: Vec<String> = std::env::args().collect();
+            let show_drive = arg_value(&args, SHOW_DRIVE_ARG);
+            app.manage(PendingDrive(Mutex::new(show_drive.clone())));
 
             let handle = app.handle().clone();
             if let Err(e) = build_tray(&handle, &s.lang) {
@@ -398,7 +507,7 @@ pub fn run() {
             // The window is created hidden (see tauri.conf.json) to avoid a flash.
             let launched_minimized = std::env::args().any(|a| a == MINIMIZED_ARG);
             if let Some(w) = app.get_webview_window("main") {
-                if launched_minimized || s.start_minimized {
+                if (launched_minimized || s.start_minimized) && show_drive.is_none() {
                     if !s.close_to_tray {
                         let _ = w.show();
                         let _ = w.minimize();
@@ -445,6 +554,7 @@ pub fn run() {
             list_events,
             clear_events,
             export_events,
+            take_pending_drive,
         ])
         .run(tauri::generate_context!())
         .expect("error while running UsbLens");

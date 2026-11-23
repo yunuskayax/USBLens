@@ -124,6 +124,34 @@ export default function App() {
     }
   }, [toast]);
 
+  // Explorer right-click "UsbLens'te göster": select the device that owns the drive.
+  const [pendingDrive, setPendingDrive] = useState<string | null>(null);
+  useEffect(() => {
+    api.takePendingDrive().then((d) => d && setPendingDrive(d)).catch(() => {});
+    const un = api.onSelectDrive((d) => {
+      setPendingDrive(d);
+      refresh();
+    });
+    return () => {
+      un.then((f) => f());
+    };
+  }, [refresh]);
+  useEffect(() => {
+    if (!pendingDrive || loading) return;
+    const letter = pendingDrive.trim().replace(/^"/, "").charAt(0).toUpperCase();
+    const hit = devices.find((d) => d.driveLetters.some((l) => l.toUpperCase().startsWith(`${letter}:`)));
+    setPendingDrive(null);
+    if (hit) {
+      setView("table");
+      setQuery("");
+      setStatus("all");
+      setKinds(new Set());
+      setSelected(hit.instanceId);
+    } else {
+      toast({ kind: "error", title: dict[langRef.current].driveNotUsb.replace("{d}", `${letter}:`) });
+    }
+  }, [pendingDrive, loading, devices, toast]);
+
   // Initial load + system info.
   useEffect(() => {
     refresh();

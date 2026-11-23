@@ -114,6 +114,7 @@ export interface Settings {
   sidebarCollapsed: boolean;
   showInterfaces: boolean;
   copyTemplate: string;
+  explorerContextMenu: boolean;
   alwaysOnTop: boolean;
   closeToTray: boolean;
   startWithWindows: boolean;
